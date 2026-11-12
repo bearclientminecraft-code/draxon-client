@@ -59,9 +59,9 @@ public final class Theme {
         int textColor = opaque(text);
 
         this.swatches = new int[]{bg, surface, accentColor, textColor};
-        this.background = withAlpha(bg, 0x7A);
-        this.panel = withAlpha(surface, 0xCC);
-        this.panelBorder = ColorUtils.mix(surface, textColor, 0.22f);
+        this.background = withAlpha(bg, 0x99);
+        this.panel = withAlpha(surface, 0xF0);
+        this.panelBorder = ColorUtils.mix(surface, textColor, 0.10f);
         this.accent = accentColor;
         this.accentSoft = ColorUtils.mix(accentColor, textColor, 0.35f);
         this.text = textColor;

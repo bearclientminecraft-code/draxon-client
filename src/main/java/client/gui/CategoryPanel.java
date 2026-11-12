@@ -33,7 +33,7 @@ public final class CategoryPanel extends Component {
     }
 
     public static int panelWidth(int screenWidth) {
-        return Math.max(96, Math.min(150, Math.round(screenWidth * 0.13f)));
+        return Math.max(92, Math.min(124, Math.round(screenWidth * 0.10f)));
     }
 
     public static int panelHeight(int screenHeight) {
@@ -118,9 +118,14 @@ public final class CategoryPanel extends Component {
         if (!isHovered(mouseX, mouseY)) {
             return false;
         }
-        scrollTarget = clamp(scrollTarget - (float) amount * ROW_HEIGHT, 0f, maxScroll());
-        scrollAnimation.setTarget(scrollTarget);
+        scrollBy((float) amount * ROW_HEIGHT);
         return true;
+    }
+
+    /** Прокручивает содержимое на delta пикселей (положительное — вверх). */
+    public void scrollBy(float delta) {
+        scrollTarget = clamp(scrollTarget - delta, 0f, maxScroll());
+        scrollAnimation.setTarget(scrollTarget);
     }
 
     private void layoutComponents() {

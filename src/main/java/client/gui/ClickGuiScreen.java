@@ -104,6 +104,13 @@ public final class ClickGuiScreen extends Screen {
             onClose();
             return true;
         }
+        if (!searchBar.isFocused() && (event.key() == GLFW.GLFW_KEY_UP || event.key() == GLFW.GLFW_KEY_DOWN)) {
+            float step = event.key() == GLFW.GLFW_KEY_UP ? CategoryPanel.ROW_HEIGHT : -CategoryPanel.ROW_HEIGHT;
+            for (CategoryPanel panel : panels) {
+                panel.scrollBy(step);
+            }
+            return true;
+        }
         return searchBar.keyPressed(event.key(), event.scancode(), event.modifiers());
     }
 
