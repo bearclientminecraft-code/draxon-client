@@ -34,7 +34,7 @@ public final class Theme {
     public static final Theme CRIMSON = register("crimson", "Crimson",
             0x170D10, 0x281519, 0xD94B62, 0xFFECEF);
     public static final Theme CHAMPAGNE = register("champagne", "Champagne",
-            0x15130F, 0x252119, 0xC7A66A, 0xFFF8E0);
+            0x15130F, 0x252119, 0xC7A66A, 0xFFF8E9);
 
     public final String id;
     public final String displayName;
