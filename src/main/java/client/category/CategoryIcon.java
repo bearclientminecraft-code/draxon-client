@@ -3,7 +3,7 @@ package client.category;
 import client.DraxonClient;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /** Иконки категорий: PNG-текстуры из assets/draxon/textures/gui. */
 public enum CategoryIcon {
@@ -13,10 +13,10 @@ public enum CategoryIcon {
     PERSON("textures/gui/icon_person.png"),
     GEAR("textures/gui/icon_gear.png");
 
-    private final ResourceLocation texture;
+    private final Identifier texture;
 
     CategoryIcon(String path) {
-        this.texture = ResourceLocation.fromNamespaceAndPath(DraxonClient.MOD_ID, path);
+        this.texture = Identifier.fromNamespaceAndPath(DraxonClient.MOD_ID, path);
     }
 
     public void draw(GuiGraphics graphics, int x, int y, int size) {
