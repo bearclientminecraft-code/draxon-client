@@ -52,7 +52,7 @@ public final class ConfigManager {
     /** Данные, которые сохраняются между перезапусками. */
     public static final class Settings {
         /** Имя темы из {@link client.gui.theme.Theme}. */
-        public String theme = "midnight";
+        public String theme = "midnight_blue";
         /** Код клавиши открытия ClickGUI (по умолчанию Right Shift). */
         public int clickGuiKey = GLFW.GLFW_KEY_RIGHT_SHIFT;
         /** Позиции панелей в долях экрана: id категории -> {x, y}. */

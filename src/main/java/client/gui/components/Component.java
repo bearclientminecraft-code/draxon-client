@@ -11,6 +11,16 @@ public abstract class Component {
     protected int height;
     protected final Animation hover = new Animation(0f, 0.25f);
 
+    /** Высота строки внутри панели (включая промежуток). */
+    public int rowHeight() {
+        return 30;
+    }
+
+    /** Отступ слева для вложенных строк. */
+    public int indent() {
+        return 0;
+    }
+
     public void setBounds(int x, int y, int width, int height) {
         this.x = x;
         this.y = y;

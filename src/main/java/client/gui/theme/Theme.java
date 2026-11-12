@@ -1,6 +1,7 @@
 package client.gui.theme;
 
 import client.config.ConfigManager;
+import client.render.ColorUtils;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -8,41 +9,37 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Цветовая тема ClickGUI. Чтобы добавить тему, создайте её в этом классе
- * и зарегистрируйте через {@link #register(Theme)}; выбор хранится в настройках.
+ * Цветовая тема ClickGUI. Задаётся четырьмя цветами: фон, поверхность, акцент, текст.
+ * Остальные цвета (обводка, приглушённый текст, поля) вычисляются из них.
  */
 public final class Theme {
     private static final Map<String, Theme> PRESETS = new LinkedHashMap<>();
 
-    /** Тёмное синее стекло. */
-    public static final Theme MIDNIGHT = register(new Theme(
-            "midnight",
-            0x7A02060F, // затемнение фона
-            0xCC131D31, // поверхность стекла (темнее)
-            0x26FFFFFF, // обводка (тоньше)
-            0xFF4F8CFF, // акцент
-            0xFF8DB8FF, // акцент при наведении
-            0xFFF2F6FF, // основной текст
-            0xFF8EA0BE, // приглушённый текст
-            0x66000000, // тень
-            0x66101B2E  // поля ввода
-    ));
+    public static final Theme MIDNIGHT_BLUE = register("midnight_blue", "Midnight Blue",
+            0x080D18, 0x111B2B, 0x3978E8, 0xEAF1FF);
+    public static final Theme OBSIDIAN_PURPLE = register("obsidian_purple", "Obsidian Purple",
+            0x100D18, 0x1C1728, 0x9365E8, 0xF1EAFE);
+    public static final Theme ARCTIC = register("arctic", "Arctic",
+            0x0B141B, 0x14232D, 0x50BDEB, 0xE7F8FF);
+    public static final Theme EMERALD = register("emerald", "Emerald",
+            0x0B1512, 0x14251D, 0x35B77A, 0xE7FFF1);
+    public static final Theme ROSE_QUARTZ = register("rose_quartz", "Rose Quartz",
+            0x180F17, 0x281824, 0xDB78B2, 0xFFF0F8);
+    public static final Theme GRAPHITE = register("graphite", "Graphite",
+            0x101010, 0x1C1C1C, 0xA0A0A0, 0xF5F5F5);
+    public static final Theme SUNSET = register("sunset", "Sunset",
+            0x171016, 0x281B22, 0xE58A55, 0xFFF0E6);
+    public static final Theme OCEAN = register("ocean", "Ocean",
+            0x081619, 0x10262B, 0x32BFC1, 0xE6FFFF);
+    public static final Theme CRIMSON = register("crimson", "Crimson",
+            0x170D10, 0x281519, 0xD94B62, 0xFFECEF);
+    public static final Theme CHAMPAGNE = register("champagne", "Champagne",
+            0x15130F, 0x252119, 0xC7A66A, 0xFFF8E0);
 
-    /** Нейтральное серое стекло. */
-    public static final Theme GRAPHITE = register(new Theme(
-            "graphite",
-            0x7A000000,
-            0xA8161616,
-            0x3DFFFFFF,
-            0xFF9CA3AF,
-            0xFFD1D5DB,
-            0xFFF3F4F6,
-            0xFF8A8A8A,
-            0x66000000,
-            0x66202020
-    ));
-
-    public final String name;
+    public final String id;
+    public final String displayName;
+    /** Цвета для плашки: фон, поверхность, акцент, текст. */
+    public final int[] swatches;
     public final int background;
     public final int panel;
     public final int panelBorder;
@@ -53,32 +50,46 @@ public final class Theme {
     public final int shadow;
     public final int field;
 
-    private Theme(String name, int background, int panel, int panelBorder, int accent, int accentSoft,
-                  int text, int textMuted, int shadow, int field) {
-        this.name = name;
-        this.background = background;
-        this.panel = panel;
-        this.panelBorder = panelBorder;
-        this.accent = accent;
-        this.accentSoft = accentSoft;
-        this.text = text;
-        this.textMuted = textMuted;
-        this.shadow = shadow;
-        this.field = field;
+    private Theme(String id, String displayName, int background, int panel, int accent, int text) {
+        this.id = id;
+        this.displayName = displayName;
+        int bg = opaque(background);
+        int surface = opaque(panel);
+        int accentColor = opaque(accent);
+        int textColor = opaque(text);
+
+        this.swatches = new int[]{bg, surface, accentColor, textColor};
+        this.background = withAlpha(bg, 0x7A);
+        this.panel = withAlpha(surface, 0xCC);
+        this.panelBorder = ColorUtils.mix(surface, textColor, 0.22f);
+        this.accent = accentColor;
+        this.accentSoft = ColorUtils.mix(accentColor, textColor, 0.35f);
+        this.text = textColor;
+        this.textMuted = ColorUtils.mix(textColor, surface, 0.45f);
+        this.shadow = 0x66000000;
+        this.field = withAlpha(surface, 0x66);
     }
 
-    private static Theme register(Theme theme) {
-        PRESETS.put(theme.name, theme);
+    private static Theme register(String id, String displayName, int background, int panel, int accent, int text) {
+        Theme theme = new Theme(id, displayName, background, panel, accent, text);
+        PRESETS.put(id, theme);
         return theme;
     }
 
-    public static Theme get(String name) {
-        return PRESETS.getOrDefault(name, MIDNIGHT);
+    private static int opaque(int rgb) {
+        return 0xFF000000 | (rgb & 0xFFFFFF);
     }
 
-    /** Имена всех тем в порядке регистрации. */
-    public static List<String> names() {
-        return new ArrayList<>(PRESETS.keySet());
+    private static int withAlpha(int argb, int alpha) {
+        return (alpha << 24) | (argb & 0xFFFFFF);
+    }
+
+    public static Theme get(String id) {
+        return PRESETS.getOrDefault(id, MIDNIGHT_BLUE);
+    }
+
+    public static List<Theme> all() {
+        return new ArrayList<>(PRESETS.values());
     }
 
     /** Текущая тема из настроек. */

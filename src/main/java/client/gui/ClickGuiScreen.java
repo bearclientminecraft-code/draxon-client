@@ -2,10 +2,8 @@ package client.gui;
 
 import client.category.Category;
 import client.category.CategoryRegistry;
-import client.config.ConfigManager;
-import client.gui.components.Button;
 import client.gui.animation.Animation;
-import client.gui.components.Component;
+import client.gui.components.ModuleRow;
 import client.gui.theme.Theme;
 import client.module.Module;
 import client.module.ModuleRegistry;
@@ -27,7 +25,6 @@ public final class ClickGuiScreen extends Screen {
 
     private final List<CategoryPanel> panels = new ArrayList<>();
     private final SearchBar searchBar;
-    private final Button themeButton;
     private final Animation openAnimation = new Animation(0f, 0.2f);
     private List<Module> searchResults = List.of();
     private boolean closing;
@@ -35,30 +32,19 @@ public final class ClickGuiScreen extends Screen {
     public ClickGuiScreen() {
         super(net.minecraft.network.chat.Component.literal("Draxon ClickGUI"));
         for (Category category : CategoryRegistry.all()) {
-            panels.add(new CategoryPanel(category));
+            CategoryPanel panel = new CategoryPanel(category);
+            for (Module module : ModuleRegistry.byCategory(category)) {
+                panel.addComponent(new ModuleRow(module, panel));
+            }
+            panels.add(panel);
         }
         this.searchBar = new SearchBar(query -> searchResults = ModuleRegistry.search(query));
-        this.themeButton = new Button(themeLabel(), this::cycleTheme);
-    }
-
-    private static String themeLabel() {
-        return "Тема: " + Theme.current().name;
-    }
-
-    /** Переключает тему по кругу и сохраняет выбор. */
-    private void cycleTheme() {
-        List<String> names = Theme.names();
-        int next = (names.indexOf(ConfigManager.settings().theme) + 1) % names.size();
-        ConfigManager.settings().theme = names.get(next);
-        ConfigManager.save();
-        themeButton.setLabel(themeLabel());
     }
 
     @Override
     protected void init() {
         int barWidth = Math.min(260, width - 40);
         searchBar.setBounds((width - barWidth) / 2, height - 46, barWidth, 22);
-        themeButton.setBounds(width - 150, 12, 138, 22);
     }
 
     @Override
@@ -78,7 +64,6 @@ public final class ClickGuiScreen extends Screen {
             panel.render(graphics, mouseX, mouseY, progress);
         }
         searchBar.render(graphics, mouseX, mouseY, progress);
-        themeButton.render(graphics, mouseX, mouseY, progress);
     }
 
     @Override
@@ -90,9 +75,6 @@ public final class ClickGuiScreen extends Screen {
         double mouseY = event.y();
         int button = event.button();
 
-        if (themeButton.mouseClicked(mouseX, mouseY, button)) {
-            return true;
-        }
         for (int i = panels.size() - 1; i >= 0; i--) {
             if (panels.get(i).mouseClicked(mouseX, mouseY, button)) {
                 searchBar.unfocus();

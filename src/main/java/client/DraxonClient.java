@@ -4,6 +4,7 @@ import client.category.CategoryRegistry;
 import client.config.ConfigManager;
 import client.keybind.KeybindManager;
 import client.module.ModuleRegistry;
+import client.module.ThemesModule;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import org.slf4j.Logger;
@@ -20,6 +21,7 @@ public final class DraxonClient implements ClientModInitializer {
         ConfigManager.load();
         CategoryRegistry.init();
         ModuleRegistry.init();
+        ModuleRegistry.register(new ThemesModule());
         KeybindManager.init();
 
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> ConfigManager.save());

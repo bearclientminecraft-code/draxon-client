@@ -1,6 +1,9 @@
 package client.module;
 
 import client.category.Category;
+import client.gui.components.Component;
+
+import java.util.List;
 
 /**
  * Базовый класс будущих модулей. Сам по себе ничего не делает:
@@ -48,6 +51,16 @@ public abstract class Module {
 
     public final void toggle() {
         setEnabled(!enabled);
+    }
+
+    /** Может ли модуль включаться левым кликом. Для модулей-настроек выключено. */
+    public boolean isToggleable() {
+        return true;
+    }
+
+    /** Строки, которые раскрываются под модулем по правой кнопке. По умолчанию пусто. */
+    public List<Component> createSettingRows() {
+        return List.of();
     }
 
     protected void onEnable() {

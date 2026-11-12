@@ -48,6 +48,22 @@ public final class CategoryPanel extends Component {
         components.add(component);
     }
 
+    /** Вставляет строки сразу после anchor (для раскрытых настроек модуля). */
+    public void insertAfter(Component anchor, List<Component> rows) {
+        int index = components.indexOf(anchor);
+        if (index < 0) {
+            return;
+        }
+        components.addAll(index + 1, rows);
+        layoutComponents();
+    }
+
+    /** Убирает строки, которые были раскрыты под модулем. */
+    public void removeRows(List<Component> rows) {
+        components.removeAll(rows);
+        layoutComponents();
+    }
+
     /** Ставит панель в указанную позицию и размер. */
     public void place(int x, int y, int width, int height) {
         setBounds(x, y, width, height);
@@ -88,7 +104,8 @@ public final class CategoryPanel extends Component {
         if (!isHovered(mouseX, mouseY)) {
             return false;
         }
-        for (Component component : components) {
+        // Копия списка: клик может раскрыть строки и изменить components.
+        for (Component component : List.copyOf(components)) {
             if (component.mouseClicked(mouseX, mouseY, button)) {
                 return true;
             }
@@ -108,13 +125,20 @@ public final class CategoryPanel extends Component {
 
     private void layoutComponents() {
         int top = y + HEADER_HEIGHT - Math.round(scroll);
-        for (int i = 0; i < components.size(); i++) {
-            components.get(i).setBounds(x + 6, top + i * ROW_HEIGHT, width - 12, ROW_HEIGHT - 4);
+        for (Component component : components) {
+            int rowHeight = component.rowHeight();
+            int indent = component.indent();
+            component.setBounds(x + 6 + indent, top, width - 12 - indent, rowHeight - 4);
+            top += rowHeight;
         }
     }
 
     private float maxScroll() {
-        return Math.max(0f, components.size() * ROW_HEIGHT - (height - HEADER_HEIGHT));
+        int total = 0;
+        for (Component component : components) {
+            total += component.rowHeight();
+        }
+        return Math.max(0f, total - (height - HEADER_HEIGHT));
     }
 
     private static float clamp(float value, float min, float max) {
