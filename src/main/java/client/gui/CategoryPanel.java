@@ -105,7 +105,7 @@ public final class CategoryPanel extends Component {
         layoutComponents();
 
         Theme theme = Theme.current();
-        RenderUtils.drawShadow(graphics, x, y, width, height, RADIUS, 6, theme.shadow, alpha);
+        RenderUtils.drawShadow(graphics, x, y, width, height, RADIUS, 3, theme.shadow, alpha);
         RenderUtils.fillRounded(graphics, x, y, width, height, RADIUS, ColorUtils.mulAlpha(theme.panelBorder, alpha));
         RenderUtils.fillRounded(graphics, x + 1, y + 1, width - 2, height - 2, RADIUS - 1,
                 ColorUtils.mulAlpha(theme.panel, alpha));

@@ -56,7 +56,6 @@ public final class ClickGuiScreen extends Screen {
             return;
         }
 
-        renderBackground(graphics, mouseX, mouseY, partialTick);
         graphics.fill(0, 0, width, height, ColorUtils.mulAlpha(Theme.current().background, progress));
 
         int slide = Math.round((1f - progress) * SLIDE_DISTANCE);
