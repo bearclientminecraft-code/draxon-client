@@ -3,8 +3,9 @@
     {
       "type": "ttf",
       "file": "draxon:fonts/Inter-Regular.ttf",
-      "size": 10.0,
-      "oversample": 4.0,
+      "size": 10,
+      "oversample": 4,
+      "shift": [0, 0],
       "skip": []
     }
   ]

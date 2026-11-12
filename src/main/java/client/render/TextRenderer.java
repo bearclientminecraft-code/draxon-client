@@ -17,8 +17,8 @@ import net.minecraft.resources.Identifier;
  * через {@link FontDescription}, описания лежат в assets/draxon/font/.
  */
 public final class TextRenderer {
-    /** Пока выключено: Inter не загрузился (видны квадраты). Включить после проверки лога. */
-    private static final boolean INTER_ENABLED = false;
+    /** Шрифт Inter. Если в игре снова видны квадраты, см. README (проверка шрифта). */
+    private static final boolean INTER_ENABLED = true;
 
     private TextRenderer() {
     }

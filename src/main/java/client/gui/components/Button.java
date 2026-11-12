@@ -8,12 +8,16 @@ import net.minecraft.client.gui.GuiGraphics;
 
 /** Кнопка с подписью и hover-подсветкой. */
 public class Button extends Component {
-    private final String label;
+    private String label;
     private final Runnable action;
 
     public Button(String label, Runnable action) {
         this.label = label;
         this.action = action;
+    }
+
+    public void setLabel(String label) {
+        this.label = label;
     }
 
     @Override

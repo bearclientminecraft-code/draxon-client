@@ -2,7 +2,9 @@ package client.gui.theme;
 
 import client.config.ConfigManager;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -72,6 +74,11 @@ public final class Theme {
 
     public static Theme get(String name) {
         return PRESETS.getOrDefault(name, MIDNIGHT);
+    }
+
+    /** Имена всех тем в порядке регистрации. */
+    public static List<String> names() {
+        return new ArrayList<>(PRESETS.keySet());
     }
 
     /** Текущая тема из настроек. */
