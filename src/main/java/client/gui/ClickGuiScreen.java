@@ -144,11 +144,6 @@ public final class ClickGuiScreen extends Screen {
         requestClose();
     }
 
-    @Override
-    public boolean isPauseGame() {
-        return false;
-    }
-
     /** Запускает анимацию закрытия; экран закроется, когда она завершится. */
     public void requestClose() {
         closing = true;

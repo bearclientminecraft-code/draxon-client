@@ -8,7 +8,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -23,7 +23,7 @@ public final class KeybindManager {
 
     public static void init() {
         KeyMapping.Category category =
-                KeyMapping.Category.register(ResourceLocation.fromNamespaceAndPath(DraxonClient.MOD_ID, "main"));
+                KeyMapping.Category.register(Identifier.fromNamespaceAndPath(DraxonClient.MOD_ID, "main"));
 
         int key = ConfigManager.settings().clickGuiKey;
         clickGuiKey = KeyBindingHelper.registerKeyBinding(
