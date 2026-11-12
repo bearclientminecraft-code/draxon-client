@@ -5,6 +5,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.FontDescription;
 import net.minecraft.network.chat.Style;
 import net.minecraft.util.FormattedCharSequence;
@@ -50,7 +51,7 @@ public final class TextRenderer {
     }
 
     private static FormattedCharSequence sequence(String text, Weight weight) {
-        Component component = Component.literal(text);
+        MutableComponent component = Component.literal(text);
         if (INTER_ENABLED) {
             component = component.withStyle((Style style) -> style.withFont(new FontDescription.Resource(weight.font())));
         }
