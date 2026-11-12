@@ -16,8 +16,8 @@ public final class Theme {
     public static final Theme MIDNIGHT = register(new Theme(
             "midnight",
             0x7A02060F, // затемнение фона
-            0xA8101A2C, // поверхность стекла
-            0x3DFFFFFF, // обводка
+            0xCC131D31, // поверхность стекла (темнее)
+            0x26FFFFFF, // обводка (тоньше)
             0xFF4F8CFF, // акцент
             0xFF8DB8FF, // акцент при наведении
             0xFFF2F6FF, // основной текст

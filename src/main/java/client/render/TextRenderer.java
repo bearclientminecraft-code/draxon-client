@@ -16,6 +16,9 @@ import net.minecraft.resources.Identifier;
  * через {@link FontDescription}, описания лежат в assets/draxon/font/.
  */
 public final class TextRenderer {
+    /** Пока выключено: Inter не загрузился (видны квадраты). Включить после проверки лога. */
+    private static final boolean INTER_ENABLED = false;
+
     private TextRenderer() {
     }
 
@@ -47,8 +50,10 @@ public final class TextRenderer {
     }
 
     private static FormattedCharSequence sequence(String text, Weight weight) {
-        Component component = Component.literal(text)
-                .withStyle((Style style) -> style.withFont(new FontDescription.Resource(weight.font())));
+        Component component = Component.literal(text);
+        if (INTER_ENABLED) {
+            component = component.withStyle((Style style) -> style.withFont(new FontDescription.Resource(weight.font())));
+        }
         return component.getVisualOrderText();
     }
 }

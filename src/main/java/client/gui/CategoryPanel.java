@@ -17,9 +17,9 @@ import java.util.List;
  * Позиция задаётся экраном; перетаскивания нет.
  */
 public final class CategoryPanel extends Component {
-    public static final int HEADER_HEIGHT = 34;
+    public static final int HEADER_HEIGHT = 30;
     public static final int ROW_HEIGHT = 30;
-    private static final int RADIUS = 12;
+    private static final int RADIUS = 8;
     private static final int ICON_SIZE = 16;
 
     private final Category category;
@@ -33,11 +33,11 @@ public final class CategoryPanel extends Component {
     }
 
     public static int panelWidth(int screenWidth) {
-        return Math.max(118, Math.min(170, Math.round(screenWidth * 0.16f)));
+        return Math.max(96, Math.min(150, Math.round(screenWidth * 0.13f)));
     }
 
     public static int panelHeight(int screenHeight) {
-        return Math.max(170, Math.min(460, Math.round(screenHeight * 0.5f)));
+        return Math.max(150, Math.min(380, Math.round(screenHeight * 0.42f)));
     }
 
     public Category category() {
@@ -60,7 +60,7 @@ public final class CategoryPanel extends Component {
         layoutComponents();
 
         Theme theme = Theme.current();
-        int edge = ColorUtils.mix(theme.panelBorder, 0xFFFFFFFF, 0.35f);
+        int edge = ColorUtils.mix(theme.panelBorder, 0xFFFFFFFF, 0.12f);
 
         RenderUtils.drawShadow(graphics, x, y, width, height, RADIUS, 3, theme.shadow, alpha);
         // Обводка стекла, затем сама поверхность и тонкий блик сверху.
