@@ -1,69 +1,25 @@
 package client.category;
 
+import client.DraxonClient;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.resources.ResourceLocation;
 
-/**
- * Пиксельные иконки категорий (7x7). Рисуются через заливку прямоугольников,
- * поэтому не требуют текстур и не зависят от шрифтов.
- */
+/** Иконки категорий: PNG-текстуры из assets/draxon/textures/gui. */
 public enum CategoryIcon {
-    SWORDS(new String[]{
-            "#.....#",
-            ".#...#.",
-            "..#.#..",
-            "...#...",
-            "..#.#..",
-            ".#...#.",
-            "#.....#"}),
-    ARROW(new String[]{
-            "...#...",
-            "..###..",
-            ".#####.",
-            "...#...",
-            "...#...",
-            "...#...",
-            "...#..."}),
-    MONITOR(new String[]{
-            "#######",
-            "#.....#",
-            "#.....#",
-            "#.....#",
-            "#######",
-            "...#...",
-            "..###.."}),
-    PERSON(new String[]{
-            "..###..",
-            "..###..",
-            "...#...",
-            ".#####.",
-            "..#.#..",
-            "..#.#..",
-            "..#.#.."}),
-    GEAR(new String[]{
-            "..###..",
-            ".#...#.",
-            "#.#.#.#",
-            "#..#..#",
-            "#.#.#.#",
-            ".#...#.",
-            "..###.."});
+    SWORDS("textures/gui/icon_swords.png"),
+    ARROW("textures/gui/icon_arrow.png"),
+    MONITOR("textures/gui/icon_monitor.png"),
+    PERSON("textures/gui/icon_person.png"),
+    GEAR("textures/gui/icon_gear.png");
 
-    private final String[] pattern;
+    private final ResourceLocation texture;
 
-    CategoryIcon(String[] pattern) {
-        this.pattern = pattern;
+    CategoryIcon(String path) {
+        this.texture = ResourceLocation.fromNamespaceAndPath(DraxonClient.MOD_ID, path);
     }
 
-    public void draw(GuiGraphics graphics, int x, int y, int pixel, int color) {
-        for (int row = 0; row < pattern.length; row++) {
-            String line = pattern[row];
-            for (int col = 0; col < line.length(); col++) {
-                if (line.charAt(col) == '#') {
-                    int px = x + col * pixel;
-                    int py = y + row * pixel;
-                    graphics.fill(px, py, px + pixel, py + pixel, color);
-                }
-            }
-        }
+    public void draw(GuiGraphics graphics, int x, int y, int size) {
+        graphics.blit(RenderPipelines.GUI_TEXTURED, texture, x, y, 0f, 0f, size, size, size, size);
     }
 }

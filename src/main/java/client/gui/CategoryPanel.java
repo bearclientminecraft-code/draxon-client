@@ -14,88 +14,44 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Панель категории: заголовок, иконка, перетаскивание за заголовок и прокручиваемая область.
- * Содержимое пока пустое: модули будут добавляться через {@link #addComponent(Component)}.
+ * Стеклянная панель категории: заголовок, иконка и прокручиваемая область.
+ * Позиция задаётся экраном; перетаскивания нет.
  */
 public final class CategoryPanel extends Component {
-    public static final int HEADER_HEIGHT = 28;
+    public static final int HEADER_HEIGHT = 34;
     public static final int ROW_HEIGHT = 30;
-    private static final int RADIUS = 8;
-    private static final int MIN_HEIGHT = 170;
-    private static final int MAX_HEIGHT = 460;
+    private static final int RADIUS = 12;
+    private static final int ICON_SIZE = 16;
 
     private final Category category;
     private final List<Component> components = new ArrayList<>();
     private final Animation scrollAnimation = new Animation(0f, 0.3f);
-
-    /** Позиция левого верхнего угла в долях экрана: переживает изменение разрешения. */
-    private double fractionX;
-    private double fractionY;
-    private boolean defaultPosition;
-
-    private int screenWidth;
-    private int screenHeight;
-    private int slide;
     private float scroll;
     private float scrollTarget;
 
-    private boolean dragging;
-    private int dragOffsetX;
-    private int dragOffsetY;
-
-    public CategoryPanel(Category category, double[] savedPosition) {
+    public CategoryPanel(Category category) {
         this.category = category;
-        if (savedPosition != null && savedPosition.length == 2) {
-            this.fractionX = savedPosition[0];
-            this.fractionY = savedPosition[1];
-        } else {
-            this.defaultPosition = true;
-        }
     }
 
     public static int panelWidth(int screenWidth) {
-        return Math.max(120, Math.min(190, Math.round(screenWidth * 0.18f)));
+        return Math.max(118, Math.min(170, Math.round(screenWidth * 0.16f)));
     }
 
     public static int panelHeight(int screenHeight) {
-        return Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT, Math.round(screenHeight * 0.5f)));
+        return Math.max(170, Math.min(460, Math.round(screenHeight * 0.5f)));
     }
 
     public Category category() {
         return category;
     }
 
-    public boolean needsDefaultPosition() {
-        return defaultPosition;
-    }
-
-    public void setPosition(double fractionX, double fractionY) {
-        this.fractionX = fractionX;
-        this.fractionY = fractionY;
-        this.defaultPosition = false;
-    }
-
-    public double[] position() {
-        return new double[]{fractionX, fractionY};
-    }
-
     public void addComponent(Component component) {
         components.add(component);
     }
 
-    /**
-     * Пересчитывает размеры и положение под текущий экран.
-     *
-     * @param slide смещение по вертикали для анимации появления
-     */
-    public void updateBounds(int screenWidth, int screenHeight, int slide) {
-        this.screenWidth = screenWidth;
-        this.screenHeight = screenHeight;
-        this.slide = slide;
-        this.width = panelWidth(screenWidth);
-        this.height = panelHeight(screenHeight);
-        this.x = clamp(Math.round((float) (fractionX * screenWidth)), 0, screenWidth - width);
-        this.y = clamp(Math.round((float) (fractionY * screenHeight)), 0, screenHeight - height) + slide;
+    /** Ставит панель в указанную позицию и размер. */
+    public void place(int x, int y, int width, int height) {
+        setBounds(x, y, width, height);
         layoutComponents();
     }
 
@@ -105,21 +61,24 @@ public final class CategoryPanel extends Component {
         layoutComponents();
 
         Theme theme = Theme.current();
+        int edge = ColorUtils.mix(theme.panelBorder, 0xFFFFFFFF, 0.35f);
+
         RenderUtils.drawShadow(graphics, x, y, width, height, RADIUS, 3, theme.shadow, alpha);
-        RenderUtils.fillRounded(graphics, x, y, width, height, RADIUS, ColorUtils.mulAlpha(theme.panelBorder, alpha));
+        // Обводка стекла, затем сама поверхность и тонкий блик сверху.
+        RenderUtils.fillRounded(graphics, x, y, width, height, RADIUS, ColorUtils.mulAlpha(edge, alpha));
         RenderUtils.fillRounded(graphics, x + 1, y + 1, width - 2, height - 2, RADIUS - 1,
                 ColorUtils.mulAlpha(theme.panel, alpha));
+        graphics.fill(x + RADIUS, y + 1, x + width - RADIUS, y + 2,
+                ColorUtils.mulAlpha(edge, alpha));
 
         Font font = Minecraft.getInstance().font;
         int titleY = y + (HEADER_HEIGHT - font.lineHeight) / 2;
-        graphics.drawString(font, category.displayName(), x + 12, titleY,
+        graphics.drawString(font, category.displayName(), x + 14, titleY,
                 ColorUtils.mulAlpha(theme.text, alpha), false);
-        category.icon().draw(graphics, x + width - 22, y + (HEADER_HEIGHT - 14) / 2, 2,
-                ColorUtils.mulAlpha(theme.accent, alpha));
-        graphics.fill(x + 8, y + HEADER_HEIGHT, x + width - 8, y + HEADER_HEIGHT + 1,
-                ColorUtils.mulAlpha(theme.panelBorder, alpha));
+        // Иконка в PNG уже нарисована нужным цветом, поэтому альфа здесь не применяется.
+        category.icon().draw(graphics, x + width - ICON_SIZE - 12, y + (HEADER_HEIGHT - ICON_SIZE) / 2, ICON_SIZE);
 
-        graphics.enableScissor(x + 1, y + HEADER_HEIGHT + 1, x + width - 1, y + height - 1);
+        graphics.enableScissor(x + 1, y + HEADER_HEIGHT, x + width - 1, y + height - 1);
         for (Component component : components) {
             component.render(graphics, mouseX, mouseY, alpha);
         }
@@ -131,37 +90,11 @@ public final class CategoryPanel extends Component {
         if (!isHovered(mouseX, mouseY)) {
             return false;
         }
-        if (button == 0 && mouseY < y + HEADER_HEIGHT) {
-            dragging = true;
-            dragOffsetX = (int) (mouseX - x);
-            dragOffsetY = (int) (mouseY - y);
-            return true;
-        }
         for (Component component : components) {
             if (component.mouseClicked(mouseX, mouseY, button)) {
                 return true;
             }
         }
-        return true;
-    }
-
-    @Override
-    public void mouseReleased(double mouseX, double mouseY, int button) {
-        dragging = false;
-    }
-
-    @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
-        if (!dragging) {
-            return false;
-        }
-        int newX = clamp((int) (mouseX - dragOffsetX), 0, screenWidth - width);
-        int newY = clamp((int) (mouseY - dragOffsetY), 0, screenHeight - height);
-        fractionX = newX / (double) screenWidth;
-        fractionY = newY / (double) screenHeight;
-        x = newX;
-        y = newY;
-        layoutComponents();
         return true;
     }
 
@@ -184,10 +117,6 @@ public final class CategoryPanel extends Component {
 
     private float maxScroll() {
         return Math.max(0f, components.size() * ROW_HEIGHT - (height - HEADER_HEIGHT));
-    }
-
-    private static int clamp(int value, int min, int max) {
-        return Math.max(min, Math.min(max, value));
     }
 
     private static float clamp(float value, float min, float max) {
