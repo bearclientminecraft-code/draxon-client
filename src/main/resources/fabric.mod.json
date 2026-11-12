@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "draxon",
+  "version": "${version}",
+  "name": "Draxon Client",
+  "description": "Draxon Client V1: базовая основа клиента с ClickGUI.",
+  "authors": [],
+  "license": "All-Rights-Reserved",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "client.DraxonClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.18.0",
+    "fabric-api": "*",
+    "minecraft": "~1.21.11",
+    "java": ">=21"
+  }
+}
