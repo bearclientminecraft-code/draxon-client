@@ -3,8 +3,7 @@ package client.gui.components;
 import client.gui.theme.Theme;
 import client.render.ColorUtils;
 import client.render.RenderUtils;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
+import client.render.TextRenderer;
 import net.minecraft.client.gui.GuiGraphics;
 
 /** Кнопка с подписью и hover-подсветкой. */
@@ -25,10 +24,10 @@ public class Button extends Component {
 
         RenderUtils.fillRounded(graphics, x, y, width, height, 6, ColorUtils.mulAlpha(background, alpha));
 
-        Font font = Minecraft.getInstance().font;
-        int labelX = x + (width - font.width(label)) / 2;
-        int labelY = y + (height - font.lineHeight) / 2 + 1;
-        graphics.drawString(font, label, labelX, labelY, ColorUtils.mulAlpha(theme.text, alpha), false);
+        int labelX = x + (width - TextRenderer.width(label, TextRenderer.Weight.REGULAR)) / 2;
+        int labelY = y + (height - TextRenderer.lineHeight()) / 2 + 1;
+        TextRenderer.draw(graphics, label, labelX, labelY, ColorUtils.mulAlpha(theme.text, alpha),
+                TextRenderer.Weight.REGULAR);
     }
 
     @Override

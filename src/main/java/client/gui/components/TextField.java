@@ -2,8 +2,7 @@ package client.gui.components;
 
 import client.gui.theme.Theme;
 import client.render.ColorUtils;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
+import client.render.TextRenderer;
 import net.minecraft.client.gui.GuiGraphics;
 import org.lwjgl.glfw.GLFW;
 
@@ -81,19 +80,21 @@ public final class TextField extends Component {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float alpha) {
         Theme theme = Theme.current();
-        Font font = Minecraft.getInstance().font;
-        int textY = y + (height - font.lineHeight) / 2;
+        int lineHeight = TextRenderer.lineHeight();
+        int textY = y + (height - lineHeight) / 2;
 
         if (text.isEmpty()) {
-            graphics.drawString(font, placeholder, x, textY, ColorUtils.mulAlpha(theme.textMuted, alpha), false);
+            TextRenderer.draw(graphics, placeholder, x, textY, ColorUtils.mulAlpha(theme.textMuted, alpha),
+                    TextRenderer.Weight.REGULAR);
         } else {
-            graphics.drawString(font, getText(), x, textY, ColorUtils.mulAlpha(theme.text, alpha), false);
+            TextRenderer.draw(graphics, getText(), x, textY, ColorUtils.mulAlpha(theme.text, alpha),
+                    TextRenderer.Weight.REGULAR);
         }
 
         boolean caretVisible = (System.currentTimeMillis() / 500) % 2 == 0;
         if (focused && caretVisible) {
-            int caretX = x + (text.isEmpty() ? 0 : font.width(getText())) + 1;
-            graphics.fill(caretX, textY - 1, caretX + 1, textY + font.lineHeight,
+            int caretX = x + (text.isEmpty() ? 0 : TextRenderer.width(getText(), TextRenderer.Weight.REGULAR)) + 1;
+            graphics.fill(caretX, textY - 1, caretX + 1, textY + lineHeight,
                     ColorUtils.mulAlpha(theme.text, alpha));
         }
     }

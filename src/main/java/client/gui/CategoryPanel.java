@@ -6,8 +6,7 @@ import client.gui.components.Component;
 import client.gui.theme.Theme;
 import client.render.ColorUtils;
 import client.render.RenderUtils;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
+import client.render.TextRenderer;
 import net.minecraft.client.gui.GuiGraphics;
 
 import java.util.ArrayList;
@@ -71,10 +70,9 @@ public final class CategoryPanel extends Component {
         graphics.fill(x + RADIUS, y + 1, x + width - RADIUS, y + 2,
                 ColorUtils.mulAlpha(edge, alpha));
 
-        Font font = Minecraft.getInstance().font;
-        int titleY = y + (HEADER_HEIGHT - font.lineHeight) / 2;
-        graphics.drawString(font, category.displayName(), x + 14, titleY,
-                ColorUtils.mulAlpha(theme.text, alpha), false);
+        int titleY = y + (HEADER_HEIGHT - TextRenderer.lineHeight()) / 2;
+        TextRenderer.draw(graphics, category.displayName(), x + 14, titleY,
+                ColorUtils.mulAlpha(theme.text, alpha), TextRenderer.Weight.REGULAR);
         // Иконка в PNG уже нарисована нужным цветом, поэтому альфа здесь не применяется.
         category.icon().draw(graphics, x + width - ICON_SIZE - 12, y + (HEADER_HEIGHT - ICON_SIZE) / 2, ICON_SIZE);
 
