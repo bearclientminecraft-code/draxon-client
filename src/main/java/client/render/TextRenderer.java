@@ -7,7 +7,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FontDescription;
 import net.minecraft.network.chat.Style;
-import net.minecraft.resources.FormattedCharSequence;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.resources.Identifier;
 
 /**
