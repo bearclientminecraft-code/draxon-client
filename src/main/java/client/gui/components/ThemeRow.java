@@ -2,12 +2,15 @@ package client.gui.components;
 
 import client.config.ConfigManager;
 import client.gui.theme.Theme;
+import client.lang.LanguageManager;
+import client.notification.Notification;
+import client.notification.NotificationManager;
 import client.render.ColorUtils;
 import client.render.RenderUtils;
 import client.render.TextRenderer;
 import net.minecraft.client.gui.GuiGraphics;
 
-/** Плашка темы: название и четыре цвета. Клик выбирает тему. */
+/** Плашка темы: название и четыре базовых цвета. Клик выбирает тему. */
 public final class ThemeRow extends Component {
     private static final int SWATCH = 6;
     private static final int SWATCH_GAP = 3;
@@ -16,6 +19,10 @@ public final class ThemeRow extends Component {
 
     public ThemeRow(Theme theme) {
         this.theme = theme;
+    }
+
+    public Theme theme() {
+        return theme;
     }
 
     @Override
@@ -29,6 +36,11 @@ public final class ThemeRow extends Component {
     }
 
     @Override
+    public String searchKey() {
+        return theme.displayName;
+    }
+
+    @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float alpha) {
         float hoverValue = updateHover(mouseX, mouseY);
         Theme current = Theme.current();
@@ -36,13 +48,13 @@ public final class ThemeRow extends Component {
 
         int background = selected
                 ? ColorUtils.mix(current.panel, current.accent, 0.22f)
-                : ColorUtils.mix(current.panel, current.text, 0.04f + hoverValue * 0.06f);
+                : ColorUtils.mulAlpha(current.hover, alpha * hoverValue);
         RenderUtils.fillRounded(graphics, x, y, width, height, 7, ColorUtils.mulAlpha(background, alpha));
 
         int textY = y + (height - TextRenderer.lineHeight()) / 2;
         int textColor = selected ? current.text : current.textMuted;
         TextRenderer.draw(graphics, theme.displayName, x + 8, textY, ColorUtils.mulAlpha(textColor, alpha),
-                TextRenderer.Weight.REGULAR);
+                TextRenderer.Weight.MEDIUM);
 
         // Четыре цвета темы справа: фон, поверхность, акцент, текст.
         int swatchX = x + width - 8 - (SWATCH * 4 + SWATCH_GAP * 3);
@@ -58,6 +70,8 @@ public final class ThemeRow extends Component {
         if (button == 0 && isHovered(mouseX, mouseY)) {
             ConfigManager.settings().theme = theme.id;
             ConfigManager.save();
+            NotificationManager.push(LanguageManager.tr("notification.theme", "Theme") + ": "
+                    + theme.displayName, Notification.Type.INFO);
             return true;
         }
         return false;

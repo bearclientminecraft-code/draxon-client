@@ -15,8 +15,8 @@ public final class CategoryRegistry {
 
     static {
         register(new Category("combat", "Combat", CategoryIcon.SWORDS));
-        register(new Category("movement", "Movement", CategoryIcon.ARROW));
-        register(new Category("render", "Render", CategoryIcon.MONITOR));
+        register(new Category("movement", "Movement", CategoryIcon.RUNNER));
+        register(new Category("render", "Render", CategoryIcon.PALETTE));
         register(new Category("player", "Player", CategoryIcon.PERSON));
         register(new Category("misc", "Misc", CategoryIcon.GEAR));
     }
