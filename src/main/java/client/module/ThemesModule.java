@@ -1,6 +1,6 @@
 package client.module;
 
-import client.category.CategoryRegistry;
+import client.category.Category;
 import client.gui.components.Component;
 import client.gui.components.ThemeRow;
 import client.gui.theme.Theme;
@@ -10,9 +10,8 @@ import java.util.List;
 
 /** Модуль-настройка: раскрывается правой кнопкой и показывает плашки всех тем. */
 public final class ThemesModule extends Module {
-    public ThemesModule() {
-        super("Themes", "Выбор цветовой темы интерфейса",
-                CategoryRegistry.get("misc").orElseThrow());
+    public ThemesModule(Category category) {
+        super("Themes", "Interface color theme", category);
     }
 
     @Override

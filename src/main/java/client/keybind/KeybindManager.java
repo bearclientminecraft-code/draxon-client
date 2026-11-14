@@ -33,6 +33,19 @@ public final class KeybindManager {
         ClientTickEvents.END_CLIENT_TICK.register(KeybindManager::onClientTick);
     }
 
+    /** Применяет новую клавишу ClickGUI (используется загрузкой конфигурации). */
+    public static void applyKey(int key) {
+        if (key <= 0) {
+            return;
+        }
+        ConfigManager.settings().clickGuiKey = key;
+        RESERVED_KEYS.clear();
+        if (clickGuiKey != null) {
+            clickGuiKey.setKey(InputConstants.Type.KEYSYM.getOrCreate(key));
+        }
+        reserve(key, "clickgui");
+    }
+
     /**
      * Резервирует клавишу за действием.
      *

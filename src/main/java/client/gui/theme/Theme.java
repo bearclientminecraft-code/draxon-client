@@ -9,12 +9,17 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Цветовая тема ClickGUI. Задаётся четырьмя цветами: фон, поверхность, акцент, текст.
- * Остальные цвета (обводка, приглушённый текст, поля) вычисляются из них.
+ * Цветовая тема ClickGUI. Каждая тема задаётся базовыми цветами (фон, панель, акцент,
+ * текст), опционально — цветом плашки и вторым акцентом, и разворачивает из них полную
+ * палитру из девяти цветов: фон, панель, плашка модуля, акцент, текст, вторичный текст,
+ * граница, hover и уведомления.
  */
 public final class Theme {
     private static final Map<String, Theme> PRESETS = new LinkedHashMap<>();
 
+    /** Базовая тема Draxon: нейтральное тёмное стекло с холодным акцентом. */
+    public static final Theme DRAXON = register("draxon", "Draxon",
+            0x05070B, 0x15181E, 0x9AA7C7, 0xF4F6FA);
     public static final Theme MIDNIGHT_BLUE = register("midnight_blue", "Midnight Blue",
             0x080D18, 0x111B2B, 0x3978E8, 0xEAF1FF);
     public static final Theme OBSIDIAN_PURPLE = register("obsidian_purple", "Obsidian Purple",
@@ -35,22 +40,40 @@ public final class Theme {
             0x170D10, 0x281519, 0xD94B62, 0xFFECEF);
     public static final Theme CHAMPAGNE = register("champagne", "Champagne",
             0x15130F, 0x252119, 0xC7A66A, 0xFFF8E9);
+    /** Halloween: тыквенный оранжевый и фиолетовый на почти чёрном фоне. */
+    public static final Theme HALLOWEEN = register("halloween", "Halloween",
+            0x120B18, 0x211329, 0xFF7518, 0xFFF0E6, 0x2B1933, 0xA64DFF);
+    /** Cyberpunk: неоновый бирюзовый с маджентовым вторым акцентом. */
+    public static final Theme CYBERPUNK = register("cyberpunk", "Cyberpunk",
+            0x080B16, 0x11182A, 0x00F5D4, 0xEAFBFF, 0x19243A, 0xFF3CAC);
 
     public final String id;
     public final String displayName;
-    /** Цвета для плашки: фон, поверхность, акцент, текст. */
+    /** Четыре базовых цвета для компактной плашки: фон, поверхность, акцент, текст. */
     public final int[] swatches;
     public final int background;
     public final int panel;
+    public final int module;
     public final int panelBorder;
     public final int accent;
     public final int accentSoft;
     public final int text;
     public final int textMuted;
+    public final int hover;
+    public final int notification;
     public final int shadow;
     public final int field;
 
     private Theme(String id, String displayName, int background, int panel, int accent, int text) {
+        this(id, displayName, background, panel, accent, text, 0, 0);
+    }
+
+    /**
+     * @param card      отдельный цвет плашки модуля; 0 — выводится из панели
+     * @param secondary второй акцент (наведение, мягкий акцент); 0 — выводится из основного
+     */
+    private Theme(String id, String displayName, int background, int panel, int accent, int text,
+                  int card, int secondary) {
         this.id = id;
         this.displayName = displayName;
         int bg = opaque(background);
@@ -60,18 +83,31 @@ public final class Theme {
 
         this.swatches = new int[]{bg, surface, accentColor, textColor};
         this.background = withAlpha(bg, 0x99);
-        this.panel = withAlpha(surface, 0xF0);
+        this.panel = withAlpha(surface, 0xE8);
+        this.module = card != 0
+                ? withAlpha(opaque(card), 0x66)
+                : withAlpha(ColorUtils.mix(surface, textColor, 0.05f) & 0xFFFFFF, 0x55);
         this.panelBorder = ColorUtils.mix(surface, textColor, 0.10f);
         this.accent = accentColor;
-        this.accentSoft = ColorUtils.mix(accentColor, textColor, 0.35f);
+        this.accentSoft = secondary != 0 ? opaque(secondary) : ColorUtils.mix(accentColor, textColor, 0.35f);
         this.text = textColor;
         this.textMuted = ColorUtils.mix(textColor, surface, 0.45f);
+        this.hover = withAlpha(ColorUtils.mix(surface, secondary != 0 ? opaque(secondary) : accentColor,
+                secondary != 0 ? 0.28f : 0.20f) & 0xFFFFFF, 0xA6);
+        this.notification = withAlpha(surface & 0xFFFFFF, 0xF0);
         this.shadow = 0x66000000;
-        this.field = withAlpha(surface, 0x66);
+        this.field = withAlpha(surface & 0xFFFFFF, 0x99);
     }
 
     private static Theme register(String id, String displayName, int background, int panel, int accent, int text) {
         Theme theme = new Theme(id, displayName, background, panel, accent, text);
+        PRESETS.put(id, theme);
+        return theme;
+    }
+
+    private static Theme register(String id, String displayName, int background, int panel, int accent, int text,
+                                  int card, int secondary) {
+        Theme theme = new Theme(id, displayName, background, panel, accent, text, card, secondary);
         PRESETS.put(id, theme);
         return theme;
     }
@@ -84,8 +120,13 @@ public final class Theme {
         return (alpha << 24) | (argb & 0xFFFFFF);
     }
 
+    /** Полный набор цветов темы для предпросмотра. */
+    public int[] palette() {
+        return new int[]{background, panel, module, accent, text, textMuted, panelBorder, hover, notification};
+    }
+
     public static Theme get(String id) {
-        return PRESETS.getOrDefault(id, MIDNIGHT_BLUE);
+        return PRESETS.getOrDefault(id, DRAXON);
     }
 
     public static List<Theme> all() {

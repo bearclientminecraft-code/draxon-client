@@ -2,12 +2,14 @@ package client.module;
 
 import client.category.Category;
 import client.gui.components.Component;
+import client.notification.NotificationManager;
+import net.minecraft.client.Minecraft;
 
 import java.util.List;
 
 /**
- * Базовый класс будущих модулей. Сам по себе ничего не делает:
- * конкретные модули наследуются от него и регистрируются в {@link ModuleRegistry}.
+ * Базовый класс модулей. Конкретные модули наследуются от него и регистрируются
+ * в {@link ModuleRegistry}; состояние сохраняется в конфигурации Draxon.
  */
 public abstract class Module {
     private final String name;
@@ -38,15 +40,12 @@ public abstract class Module {
     }
 
     public final void setEnabled(boolean value) {
-        if (enabled == value) {
-            return;
-        }
-        enabled = value;
-        if (value) {
-            onEnable();
-        } else {
-            onDisable();
-        }
+        apply(value, true);
+    }
+
+    /** Включает/выключает модуль без уведомления: старт клиента и загрузка конфигурации. */
+    public final void setEnabledSilently(boolean value) {
+        apply(value, false);
     }
 
     public final void toggle() {
@@ -63,9 +62,28 @@ public abstract class Module {
         return List.of();
     }
 
+    /** Вызывается каждый клиентский тик, пока модуль включён. */
+    public void onTick(Minecraft client) {
+    }
+
     protected void onEnable() {
     }
 
     protected void onDisable() {
+    }
+
+    private void apply(boolean value, boolean notify) {
+        if (enabled == value) {
+            return;
+        }
+        enabled = value;
+        if (value) {
+            onEnable();
+        } else {
+            onDisable();
+        }
+        if (notify) {
+            NotificationManager.moduleToggled(this, value);
+        }
     }
 }

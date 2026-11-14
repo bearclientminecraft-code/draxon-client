@@ -3,16 +3,18 @@ package client.gui;
 import client.gui.components.Component;
 import client.gui.components.TextField;
 import client.gui.theme.Theme;
+import client.lang.LanguageManager;
 import client.render.ColorUtils;
 import client.render.RenderUtils;
+import client.render.TextRenderer;
 import net.minecraft.client.gui.GuiGraphics;
 
 import java.util.function.Consumer;
 
-/** Поле поиска модулей: иконка поиска, ввод, кнопка очистки. */
+/** Поле поиска модулей: уменьшенная плашка со стеклянным фоном, иконкой и вводом. */
 public final class SearchBar extends Component {
-    private static final int RADIUS = 8;
-    private static final String PLACEHOLDER = "Поиск по модулям";
+    private static final int RADIUS = 9;
+    private static final String PLACEHOLDER = "Search for modules";
     private final TextField field;
 
     public SearchBar(Consumer<String> onQueryChanged) {
@@ -22,7 +24,7 @@ public final class SearchBar extends Component {
     @Override
     public void setBounds(int x, int y, int width, int height) {
         super.setBounds(x, y, width, height);
-        field.setBounds(x + 22, y + 4, width - 46, height - 8);
+        field.setBounds(x + 24, y + 2, width - 44, height - 4);
     }
 
     public String getQuery() {
@@ -39,25 +41,30 @@ public final class SearchBar extends Component {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float alpha) {
+        if (alpha <= 0.01f) {
+            return;
+        }
         float hoverValue = updateHover(mouseX, mouseY);
         Theme theme = Theme.current();
         boolean focused = field.isFocused();
 
         int border = focused
                 ? theme.accent
-                : ColorUtils.mix(theme.panelBorder, theme.accentSoft, hoverValue * 0.8f);
+                : ColorUtils.mix(theme.panelBorder, theme.accentSoft, hoverValue * 0.6f);
+        float borderAlpha = focused ? 0.85f : 0.35f + hoverValue * 0.25f;
 
-        RenderUtils.drawShadow(graphics, x, y, width, height, RADIUS, 4, theme.shadow, alpha);
-        RenderUtils.fillRounded(graphics, x, y, width, height, RADIUS, ColorUtils.mulAlpha(border, alpha));
+        RenderUtils.drawShadow(graphics, x, y, width, height, RADIUS, 5, theme.shadow, alpha * 0.9f);
+        RenderUtils.fillRounded(graphics, x, y, width, height, RADIUS,
+                ColorUtils.mulAlpha(border, alpha * borderAlpha));
         RenderUtils.fillRounded(graphics, x + 1, y + 1, width - 2, height - 2, RADIUS - 1,
                 ColorUtils.mulAlpha(theme.field, alpha));
 
-        drawSearchIcon(graphics, x + 8, y + (height - 9) / 2, ColorUtils.mulAlpha(theme.textMuted, alpha));
+        drawMagnifier(graphics, x + 12, y + height / 2.0, ColorUtils.mulAlpha(theme.textMuted, alpha));
+        field.setPlaceholder(LanguageManager.tr("search.placeholder", PLACEHOLDER));
         field.render(graphics, mouseX, mouseY, alpha);
 
         if (!field.getText().isEmpty()) {
-            drawClearIcon(graphics, x + width - 14, y + height / 2 - 2,
-                    ColorUtils.mulAlpha(theme.textMuted, alpha));
+            drawClearIcon(graphics, x + width - 14, y + height / 2.0, ColorUtils.mulAlpha(theme.textMuted, alpha));
         }
     }
 
@@ -85,19 +92,13 @@ public final class SearchBar extends Component {
         return field.charTyped(codePoint);
     }
 
-    private static void drawSearchIcon(GuiGraphics graphics, int x, int y, int color) {
-        graphics.fill(x + 1, y, x + 7, y + 1, color);
-        graphics.fill(x + 1, y + 6, x + 7, y + 7, color);
-        graphics.fill(x, y + 1, x + 1, y + 6, color);
-        graphics.fill(x + 7, y + 1, x + 8, y + 6, color);
-        graphics.fill(x + 7, y + 7, x + 8, y + 8, color);
-        graphics.fill(x + 8, y + 8, x + 9, y + 9, color);
+    private static void drawMagnifier(GuiGraphics graphics, double cx, double cy, int color) {
+        RenderUtils.strokeCircle(graphics, cx, cy - 1, 4.0, 1.4, color);
+        RenderUtils.fillLine(graphics, cx + 2.9, cy + 1.9, cx + 5.6, cy + 4.6, 1.4, color);
     }
 
-    private static void drawClearIcon(GuiGraphics graphics, int x, int y, int color) {
-        for (int i = 0; i < 5; i++) {
-            graphics.fill(x + i, y + i, x + i + 1, y + i + 1, color);
-            graphics.fill(x + 4 - i, y + i, x + 5 - i, y + i + 1, color);
-        }
+    private static void drawClearIcon(GuiGraphics graphics, double cx, double cy, int color) {
+        RenderUtils.fillLine(graphics, cx - 2.5, cy - 2.5, cx + 2.5, cy + 2.5, 1.2, color);
+        RenderUtils.fillLine(graphics, cx + 2.5, cy - 2.5, cx - 2.5, cy + 2.5, 1.2, color);
     }
 }

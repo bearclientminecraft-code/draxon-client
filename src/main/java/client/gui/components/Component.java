@@ -21,6 +21,11 @@ public abstract class Component {
         return 0;
     }
 
+    /** Строка, по которой элемент находится поиском. null — элемент не участвует в поиске. */
+    public String searchKey() {
+        return null;
+    }
+
     public void setBounds(int x, int y, int width, int height) {
         this.x = x;
         this.y = y;
