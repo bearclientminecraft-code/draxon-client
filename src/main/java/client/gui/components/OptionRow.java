@@ -45,7 +45,7 @@ public final class OptionRow extends Component {
 
         int background = active
                 ? ColorUtils.mix(theme.panel, theme.accent, 0.22f)
-                : ColorUtils.mulAlpha(theme.hover, alpha * hoverValue);
+                : (hoverValue > 0.01f ? ColorUtils.mulAlpha(theme.hover, alpha * hoverValue) : ColorUtils.mulAlpha(theme.panel, alpha));
         RenderUtils.fillRounded(graphics, x, y, width, height, 7, ColorUtils.mulAlpha(background, alpha));
 
         int textY = y + (height - TextRenderer.lineHeight()) / 2;
@@ -65,7 +65,7 @@ public final class OptionRow extends Component {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button == 0 && isHovered(mouseX, mouseY)) {
+        if (button == 0 && isHovered(mouseX, mouseY) && value != null && !value.isEmpty()) {
             onSelect.accept(value);
             return true;
         }

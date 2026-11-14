@@ -52,14 +52,16 @@ public final class ArmorHud {
         }
         boolean left = "left".equals(ConfigManager.settings().armorHudSide);
 
-        // Упрощённое положение: сдвиг от босс-бара и от тотема в начале кадра.
+        // Позиция рядом с хотбаром: столбик ставится над нижней панелью, по левому или
+        // правому краю под tamanhoом экрана, чтобы не уходить «по бокам» далеко от барa.
+        // Сдвиг от босс-бара и от тотема в начале кадра.
         boolean bossBar = BossBarProbe.visible();
         int totemOffset = ConfigManager.settings().armorHudSide.equals("left") ? -14 : 0;
         int xOffset = (bossBar ? 28 : 0) + totemOffset;
 
         int total = count * SLOT_SIZE + (count - 1) * GAP;
+        int y = screenHeight - MARGIN - total - 8;
         int x = left ? MARGIN + xOffset : screenWidth - SLOT_SIZE - MARGIN + xOffset;
-        int y = (screenHeight - total) / 2;
 
         Theme theme = Theme.current();
         for (int i = 0; i < count; i++) {
