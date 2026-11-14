@@ -3,3 +3,7 @@ build/
 .idea/
 *.iml
 run/
+META-INF/
+assets/
+client/
+fabric.mod.json
