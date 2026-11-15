@@ -27,7 +27,7 @@ public final class ThemeRow extends Component {
 
     @Override
     public int rowHeight() {
-        return 34;
+        return 26;
     }
 
     @Override
@@ -46,9 +46,12 @@ public final class ThemeRow extends Component {
         Theme current = Theme.current();
         boolean selected = current == theme;
 
+        // Свёрнутая строка темы должна быть видна без наведения, иначе список тем кажется пустым.
         int background = selected
                 ? ColorUtils.mix(current.panel, current.accent, 0.22f)
-                : ColorUtils.mulAlpha(current.hover, alpha * hoverValue);
+                : (hoverValue > 0.01f
+                        ? ColorUtils.mulAlpha(current.hover, alpha * hoverValue)
+                        : ColorUtils.mulAlpha(current.panel, alpha * 0.6f));
         RenderUtils.fillRounded(graphics, x, y, width, height, 7, ColorUtils.mulAlpha(background, alpha));
 
         int textY = y + (height - TextRenderer.lineHeight()) / 2;
@@ -70,8 +73,8 @@ public final class ThemeRow extends Component {
         if (button == 0 && isHovered(mouseX, mouseY)) {
             ConfigManager.settings().theme = theme.id;
             ConfigManager.save();
-            NotificationManager.push(LanguageManager.tr("notification.theme", "Theme") + ": "
-                    + theme.displayName, Notification.Type.INFO);
+            NotificationManager.push(LanguageManager.tr("notification.theme_changed", "Theme changed")
+                    + ": " + theme.displayName, Notification.Type.INFO);
             return true;
         }
         return false;

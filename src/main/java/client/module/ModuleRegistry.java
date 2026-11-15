@@ -1,7 +1,9 @@
 package client.module;
 
+import client.DraxonClient;
 import client.category.Category;
 import client.category.CategoryRegistry;
+import client.module.combat.MacroKeys;
 import net.minecraft.client.Minecraft;
 
 import java.util.ArrayList;
@@ -30,12 +32,17 @@ public final class ModuleRegistry {
         register(new LanguageModule(misc));
         register(new OptimizationModule(misc));
 
-        Category miscHud = category("misc");
-        register(new WatermarkModule(miscHud));
-        register(new NotificationModule(miscHud));
+        // Уведомления по умолчанию включены: стек под прицелом — часть HUD клиента.
+        Module notification = new NotificationModule(misc);
+        notification.setEnabledSilently(true);
+        register(notification);
 
+        // Watermark живёт в Render как HUD-модуль (раньше висел в Misc и рисовался дважды).
         Category render = category("render");
         register(new ArmorHudModule(render));
+        Module watermark = new WatermarkModule(render);
+        watermark.setEnabledSilently(true);
+        register(watermark);
 
         Category combat = category("combat");
         client.module.combat.CombatModules.register(combat);
@@ -70,11 +77,20 @@ public final class ModuleRegistry {
                 .findFirst();
     }
 
-    /** Тик клиента: включённые модули получают управление. */
+    /** Тик клиента: сначала опрос Macro Key, затем включённые модули. */
     public static void tick(Minecraft client) {
+        MacroKeys.tick();
         for (Module module : MODULES) {
-            if (module.isEnabled()) {
+            if (!module.isEnabled()) {
+                continue;
+            }
+            try {
                 module.onTick(client);
+                module.afterTick(client);
+            } catch (Throwable error) {
+                // Ошибка первого модуля не должен ломать тик, остальные продолжуют.
+                DraxonClient.LOGGER.error("Ошибка в модуле {}: {}", module.getName(), error);
+                module.onTickError(error);
             }
         }
     }

@@ -19,7 +19,7 @@ public final class LanguageRow extends Component {
 
     @Override
     public int rowHeight() {
-        return 34;
+        return 26;
     }
 
     @Override
@@ -40,7 +40,9 @@ public final class LanguageRow extends Component {
 
         int background = selected
                 ? ColorUtils.mix(theme.panel, theme.accent, 0.22f)
-                : ColorUtils.mulAlpha(theme.hover, alpha * hoverValue);
+                : (hoverValue > 0.01f
+                        ? ColorUtils.mulAlpha(theme.hover, alpha * hoverValue)
+                        : ColorUtils.mulAlpha(theme.panel, alpha * 0.6f));
         RenderUtils.fillRounded(graphics, x, y, width, height, 7, ColorUtils.mulAlpha(background, alpha));
 
         int textY = y + (height - TextRenderer.lineHeight()) / 2;

@@ -198,6 +198,9 @@ public final class ConfigManager {
         if (settings.panelPositions == null) {
             settings.panelPositions = new HashMap<>();
         }
+        if (settings.combat == null) {
+            settings.combat = new HashMap<>();
+        }
         if (settings.theme == null) {
             settings.theme = "draxon";
         }
@@ -216,6 +219,19 @@ public final class ConfigManager {
         if (settings.notificationVisible != true) {
             settings.notificationVisible = true;
         }
+        if (settings.watermarkText == null) {
+            settings.watermarkText = "Draxon";
+        }
+        settings.watermarkScale = Math.max(50, Math.min(250, settings.watermarkScale));
+        if (!"left".equals(settings.watermarkPosition) && !"center".equals(settings.watermarkPosition)
+                && !"right".equals(settings.watermarkPosition)) {
+            settings.watermarkPosition = "center";
+        }
+        if (!"glass".equals(settings.watermarkStyle) && !"minimal".equals(settings.watermarkStyle)
+                && !"accent".equals(settings.watermarkStyle)) {
+            settings.watermarkStyle = "glass";
+        }
+        settings.notificationOffset = Math.max(0, Math.min(120, settings.notificationOffset));
     }
 
     private static boolean write(Path path, Object value) {
@@ -258,10 +274,24 @@ public final class ConfigManager {
         public boolean watermarkVisible = true;
         /** Показывать ли собственные уведомления. */
         public boolean notificationVisible = true;
+        /** Текст водяного знака (часть после логотипа). */
+        public String watermarkText = "Draxon";
+        /** Масштаб водяного знака в процентах (50..250). */
+        public int watermarkScale = 100;
+        /** Позиция водяного знака: "left", "center" или "right". */
+        public String watermarkPosition = "center";
+        /** Стиль водяного знака: "glass", "minimal" или "accent". */
+        public String watermarkStyle = "glass";
+        /** Брать ли цвета водяного знака из текущей темы. */
+        public boolean watermarkThemeColor = true;
+        /** Вертикальное смещение уведомлений от центра экрана (вниз от прицела). */
+        public int notificationOffset = 26;
         /** Позиции панелей в долях экрана: id категории -> {x, y}. */
         public Map<String, double[]> panelPositions = new HashMap<>();
         /** Состояния модулей: имя модуля -> включён. */
         public Map<String, Boolean> modules = new HashMap<>();
+        /** Настройки боевых модулей: имя модуля -> (ключ настройки -> значение). */
+        public Map<String, Map<String, String>> combat = new HashMap<>();
     }
 
     /** Содержимое профиля конфигурации. */

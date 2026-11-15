@@ -11,9 +11,9 @@ public abstract class Component {
     protected int height;
     protected final Animation hover = new Animation(0f, 0.25f);
 
-    /** Высота строки внутри панели (включая промежуток). */
+    /** Высота строки внутри панели (включая промежуток). Компактные карточки модулей. */
     public int rowHeight() {
-        return 30;
+        return 24;
     }
 
     /** Отступ слева для вложенных строк. */
@@ -67,5 +67,9 @@ public abstract class Component {
 
     public boolean charTyped(int codePoint) {
         return false;
+    }
+
+    /** Снимает фокус с вложенных полей ввода (клик мимо или клик по поиску). */
+    public void blur() {
     }
 }

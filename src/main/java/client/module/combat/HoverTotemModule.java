@@ -2,59 +2,81 @@ package client.module.combat;
 
 import client.category.Category;
 import client.gui.components.Component;
-import client.gui.components.OptionRow;
-import client.lang.LanguageManager;
-import client.module.Module;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 
 /**
- * Hover Totem — отображение информации о тотеме в HUD, позиция/масштаб/цвета,
- * счётчик тотемов в инвентаре. Ничего не нажимает автоматически.
+ * Hover Totem: «hover-only» вариант авто-тотема — экипирует тотем только когда
+ * крестик реально наведён на противника (а не постоянно), чтобы убрать лишние
+ * действия при записи CPvP-контента.
+ *
+ * <p>Наведение курсора на слот тотема в открытом инвентаре недоступно через
+ * публичный API клиента (координаты слотов не отдаются), поэтому здесь
+ * используется наведение крестика на цель; сам тотем берётся по назначенному слоту.</p>
  */
-public final class HoverTotemModule extends Module {
-    private boolean visible = true;
-    private double scale = 1.0;
-    private int position = 0; // 0 = left, 1 = right, 2 = center
-    private int colText = 0xFFFFFF;
-    private int colBg = 0xFF1F1F1F;
-    private int slot = 1;
-
+public final class HoverTotemModule extends CombatModule {
     public HoverTotemModule(Category category) {
-        super("Hover Totem", "Totem info in HUD", category);
+        super("Hover Totem", "Equip totem while hovering a target", category);
     }
 
     @Override
     public List<Component> createSettingRows() {
-        List<Component> rows = new ArrayList<>();
-        rows.add(new OptionRow(LanguageManager.tr("combat.hover_totem.visible", "Visible"), "on",
-                () -> String.valueOf(visible), v -> setVisible("on".equals(v))));
-        rows.add(new OptionRow(LanguageManager.tr("combat.hover_totem.slot", "Slot"), String.valueOf(slot),
-                () -> String.valueOf(slot), v -> slot = Math.max(1, Integer.parseInt(v))));
-        rows.add(new OptionRow(LanguageManager.tr("combat.hover_totem.scale", "Scale"), String.valueOf((int)(scale * 100)),
-                () -> String.valueOf((int)(scale * 100)), v -> scale = Math.max(50, Math.min(250, Integer.parseInt(v))) / 100f));
-        rows.add(new OptionRow(LanguageManager.tr("combat.hover_totem.position", "Position"), "left",
-                () -> { int p = position; return p == 0 ? "Left" : p == 1 ? "Right" : "Center"; },
-                v -> position = switch (v) { case "Left" -> 0; case "Right" -> 1; case "Center" -> 2; default -> 0; }));
-        rows.add(new OptionRow(LanguageManager.tr("combat.hover_totem.color_text", "Text color"), String.format("%06X", colText & 0xFFFFFF),
-                () -> String.format("%06X", colText & 0xFFFFFF),
-                v -> colText = 0xFF000000 | (Integer.parseInt(v, 16) & 0xFFFFFF)));
-        rows.add(new OptionRow(LanguageManager.tr("combat.hover_totem.color_bg", "Bg color"), String.format("%06X", colBg & 0xFFFFFF),
-                () -> String.format("%06X", colBg & 0xFFFFFF),
-                v -> colBg = 0xFF000000 | (Integer.parseInt(v, 16) & 0xFFFFFF)));
+        List<Component> rows = baseRows();
+        rows.add(toggleRow("requireWeapon", false, "combat.option.require_weapon"));
+        rows.add(intSlider("range", 40, 10, 60, 5, "", "combat.option.range"));
+        rows.add(toggleRow("showCount", true, "combat.option.show_count"));
+        addSlotRow(rows, "combat.option.totem_slot");
         return rows;
     }
 
-    private void setVisible(boolean value) { this.visible = value; }
+    public boolean showCount() {
+        return options.getBoolean("showCount", true);
+    }
 
-    public boolean isVisible() { return visible; }
-    public double getScale() { return scale; }
-    public int getPosition() { return position; }
-    public int getColText() { return colText; }
-    public int getColBg() { return colBg; }
-    public int getSlot() { return slot; }
+    @Override
+    public void onTick(Minecraft client) {
+        if (!CombatApi.ready() || !gateOpen()) {
+            return;
+        }
+        if (!hoveringTarget()) {
+            return;
+        }
+        if (CombatApi.hasTotemInOffhand()) {
+            return;
+        }
+        int slot = options.clamped("slot", 0, 0, 9);
+        int totemSlot = slot > 0 ? slot : CombatApi.hotbarSlot(Items.TOTEM_OF_UNDYING);
+        if (totemSlot <= 0) {
+            return;
+        }
+        ItemStack stack = client.player.getInventory().getItem(totemSlot - 1);
+        if (!stack.is(Items.TOTEM_OF_UNDYING)) {
+            return;
+        }
+        // Тотем с горячей панели меняем в offhand через swap-клик.
+        int inventoryIndex = totemSlot - 1;
+        if (CombatApi.moveToOffhand(inventoryIndex)) {
+            markAction();
+        }
+    }
 
-    public int countTotems() { return 0; }
+    private boolean hoveringTarget() {
+        if (!(CombatApi.mc().crosshairPickEntity instanceof net.minecraft.world.entity.player.Player hovered)) {
+            return false;
+        }
+        if (hovered == CombatApi.player() || !hovered.isAlive()) {
+            return false;
+        }
+        if (CombatApi.distanceTo(hovered) > options.clamped("range", 40, 10, 60) / 10.0) {
+            return false;
+        }
+        if (options.getBoolean("requireWeapon", false)) {
+            ItemStack held = CombatApi.heldItem();
+            return CombatApi.isSword(held) || CombatApi.isAxe(held) || CombatApi.isMace(held);
+        }
+        return true;
+    }
 }

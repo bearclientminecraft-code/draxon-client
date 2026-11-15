@@ -2,45 +2,103 @@ package client.module.combat;
 
 import client.category.Category;
 import client.gui.components.Component;
-import client.gui.components.OptionRow;
+import client.gui.components.SlotBindRow;
 import client.lang.LanguageManager;
-import client.module.Module;
+import net.minecraft.client.Minecraft;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 
-/**
- * Anchor Macro — ручная настройка якоря/светокамня/тотема с переключением.
- * Ни каких автоматических действий.
- */
-public final class AnchorMacroModule extends Module {
-    private int anchorSlot = 1;
-    private int glowstoneSlot = 2;
-    private int totemSlot = 1;
-    private int keybind = 5;
-
+/** Слоты и ПКМ: anchor -> glowstone -> totem, дальше автоматически при зажатии. */
+public final class AnchorMacroModule extends CombatModule {
     public AnchorMacroModule(Category category) {
-        super("Anchor Macro", "Manual slot switch", category);
+        super("Anchor Macro", "Anchor -> glowstone -> totem macro", category);
     }
 
     @Override
     public List<Component> createSettingRows() {
-        List<Component> rows = new ArrayList<>();
-        rows.add(new OptionRow(LanguageManager.tr("combat.anchor_macro.anchor_slot", "Anchor slot"), String.valueOf(anchorSlot),
-                () -> String.valueOf(anchorSlot), v -> anchorSlot = Math.max(1, Integer.parseInt(v))));
-        rows.add(new OptionRow(LanguageManager.tr("combat.anchor_macro.glowstone_slot", "Glowstone slot"), String.valueOf(glowstoneSlot),
-                () -> String.valueOf(glowstoneSlot), v -> glowstoneSlot = Math.max(1, Integer.parseInt(v))));
-        rows.add(new OptionRow(LanguageManager.tr("combat.anchor_macro.totem_slot", "Totem slot"), String.valueOf(totemSlot),
-                () -> String.valueOf(totemSlot), v -> totemSlot = Math.max(1, Integer.parseInt(v))));
-        rows.add(new OptionRow(LanguageManager.tr("combat.anchor_macro.keybind", "Keybind"), String.valueOf(keybind),
-                () -> String.valueOf(keybind), v -> keybind = Math.max(0, Integer.parseInt(v))));
+        List<Component> rows = baseRows();
+        rows.add(new SlotBindRow(LanguageManager.tr("combat.option.anchor_slot", "Anchor slot"),
+                () -> options.clamped("anchorSlot", 0, 0, 9),
+                v -> options.setInt("anchorSlot", v)));
+        rows.add(new SlotBindRow(LanguageManager.tr("combat.option.glowstone_slot", "Glowstone slot"),
+                () -> options.clamped("glowstoneSlot", 0, 0, 9),
+                v -> options.setInt("glowstoneSlot", v)));
+        rows.add(new SlotBindRow(LanguageManager.tr("combat.option.totem_slot", "Totem slot"),
+                () -> options.clamped("totemSlot", 0, 0, 9),
+                v -> options.setInt("totemSlot", v)));
         return rows;
     }
 
-    public int getAnchorSlot() { return anchorSlot; }
-    public int getGlowstoneSlot() { return glowstoneSlot; }
-    public int getTotemSlot() { return totemSlot; }
-    public int getKeybind() { return keybind; }
+    private int step;
+    private long stepDeadline;
+    private int originalSlot;
+    private boolean running;
+
+    @Override
+    public void onTick(Minecraft client) {
+        if (!CombatApi.ready() || !macroHeld() || !gateOpen()) {
+            step = 0;
+            running = false;
+            return;
+        }
+        if (!running) {
+            if (!macroJustPressed()) {
+                return;
+            }
+            start();
+            return;
+        }
+        doStep();
+    }
+
+    private void start() {
+        originalSlot = CombatApi.mainHandSlot();
+        step = 0;
+        running = true;
+        stepDeadline = System.currentTimeMillis() + 150;
+        markAction();
+    }
+
+    private void doStep() {
+        int slot = switch (step) {
+            case 0 -> options.clamped("anchorSlot", 0, 0, 9);
+            case 1 -> options.clamped("glowstoneSlot", 0, 0, 9);
+            case 2 -> options.clamped("totemSlot", 0, 0, 9);
+            default -> -1;
+        };
+        if (slot <= 0 || slot > 9) {
+            step = 0;
+            running = false;
+            return;
+        }
+        CombatApi.swapToSlot(slot);
+        CombatApi.rightClick();
+        step++;
+        stepDeadline = System.currentTimeMillis() + 150;
+        markAction();
+        if (step == 3) {
+            finish();
+        }
+    }
+
+    @Override
+    public void onDisable() {
+        step = 0;
+        running = false;
+    }
+
+    @Override
+    public void afterTick(Minecraft client) {
+        if (!macroHeld() && running) {
+            finish();
+        }
+    }
+
+    private void finish() {
+        if (originalSlot >= 1 && originalSlot <= 9) {
+            CombatApi.swapToSlot(originalSlot);
+        }
+        running = false;
+        step = 0;
+    }
 }

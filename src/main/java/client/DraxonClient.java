@@ -5,9 +5,8 @@ import client.command.CommandManager;
 import client.config.ConfigManager;
 import client.hud.ArmorHud;
 import client.hud.NotificationHUD;
-import client.hud.Watermark;
+import client.hud.TotemCountHud;
 import client.hud.WatermarkHUD;
-import client.hud.NotificationHUD;
 import client.keybind.KeybindManager;
 import client.module.Module;
 import client.module.ModuleRegistry;
@@ -39,15 +38,19 @@ public final class DraxonClient implements ClientModInitializer {
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> ConfigManager.save());
 
         // Уведомления рисуются поверх HUD; при открытом экране их рисует сам ClickGUI.
-        HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(MOD_ID, "notifications"),
+        HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(MOD_ID, "notification_hud"),
                 (graphics, deltaTracker) -> {
                     if (Minecraft.getInstance().screen == null) {
-                        NotificationManager.render(graphics);
+                        NotificationHUD.render(graphics);
                     }
                 });
 
-        HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(MOD_ID, "watermark"),
-                (graphics, deltaTracker) -> Watermark.render(graphics));
+        // Единственный HUD-элемент водяного знака: раньше он рисовался дважды.
+        HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(MOD_ID, "watermark_hud"),
+                (graphics, deltaTracker) -> WatermarkHUD.render(graphics));
+
+        HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(MOD_ID, "totem_count"),
+                (graphics, deltaTracker) -> TotemCountHud.render(graphics));
 
         Module armorHud = ModuleRegistry.byName("Armor HUD").orElseThrow();
         HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(MOD_ID, "armor_hud"),
@@ -56,11 +59,6 @@ public final class DraxonClient implements ClientModInitializer {
                         ArmorHud.render(graphics);
                     }
                 });
-
-        HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(MOD_ID, "watermark_hud"),
-                (graphics, deltaTracker) -> WatermarkHUD.render(graphics));
-        HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(MOD_ID, "notification_hud"),
-                (graphics, deltaTracker) -> NotificationHUD.render(graphics));
 
         LOGGER.info("{} V1 инициализирован", NAME);
     }
