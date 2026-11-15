@@ -26,13 +26,32 @@ public final class AutoHitCrystalModule extends CombatModule {
     public List<Component> createSettingRows() {
         List<Component> rows = baseRows();
         addSlotRow(rows, "combat.option.crystal_slot");
-        rows.add(toggleRow("holdRepeat", false, "combat.option.repeat_while_held"));
+        // По умолчанию ЛКМ повторяется, пока держишь ПКМ: иначе после первого
+        // кристалла в серии модуль выглядит «выключенным».
+        rows.add(toggleRow("holdRepeat", true, "combat.option.repeat_while_held"));
         return rows;
+    }
+
+    @Override
+    protected void onEnable() {
+        resetTransientState();
+        resetGate();
+    }
+
+    @Override
+    protected void onDisable() {
+        resetTransientState();
+    }
+
+    @Override
+    public void resetTransientState() {
+        useWasDown = false;
     }
 
     @Override
     public void onTick(Minecraft client) {
         if (!CombatApi.ready() || !macroHeld()) {
+            resetTransientState();
             return;
         }
         // Слот кристалла держим всегда, чтобы ПКМ ставил именно кристалл.
@@ -44,8 +63,8 @@ public final class AutoHitCrystalModule extends CombatModule {
         boolean useDown = client.options.keyUse.isDown();
         boolean justPressed = useDown && !useWasDown;
         useWasDown = useDown;
-        boolean holdRepeat = options.getBoolean("holdRepeat", false);
-        if (!justPressed && !(holdRepeat && useDown)) {
+        boolean holdRepeat = options.getBoolean("holdRepeat", true);
+        if (!useDown || (!justPressed && !holdRepeat)) {
             return;
         }
         if (!gateOpen()) {

@@ -107,6 +107,21 @@ public abstract class CombatModule extends Module {
         return MacroKeys.consumePress(key, MacroKeys.PRESS_WINDOW_MS);
     }
 
+    private long lastErrorNotice;
+
+    /** Ошибка в тике: состояние сбрасывается, модуль остаётся включённым, причина видна. */
+    @Override
+    public void onTickError(Throwable error) {
+        super.onTickError(error);
+        if (System.currentTimeMillis() - lastErrorNotice < 5000) {
+            return;
+        }
+        lastErrorNotice = System.currentTimeMillis();
+        NotificationManager.push(LanguageManager.moduleName(this) + ": "
+                + t("macro.error", "ошибка") + " (" + error.getClass().getSimpleName() + ")",
+                client.notification.Notification.Type.ERROR);
+    }
+
     /** Отклик на нажатие Macro Key: подтверждает, что макрос получил клавишу. */
     public void onMacroPressed() {
         if (options.getBoolean("macroFeedback", true)) {

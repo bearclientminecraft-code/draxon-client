@@ -1,5 +1,6 @@
 package client.module;
 
+import client.DraxonClient;
 import client.category.Category;
 import client.category.CategoryRegistry;
 import client.module.combat.MacroKeys;
@@ -80,9 +81,16 @@ public final class ModuleRegistry {
     public static void tick(Minecraft client) {
         MacroKeys.tick();
         for (Module module : MODULES) {
-            if (module.isEnabled()) {
+            if (!module.isEnabled()) {
+                continue;
+            }
+            try {
                 module.onTick(client);
                 module.afterTick(client);
+            } catch (Throwable error) {
+                // Ошибка одного модуля не должна ломать тик клиента и другие модули.
+                DraxonClient.LOGGER.error("Ошибка в модуле {}: {}", module.getName(), error.toString(), error);
+                module.onTickError(error);
             }
         }
     }

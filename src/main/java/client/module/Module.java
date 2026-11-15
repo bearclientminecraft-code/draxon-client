@@ -70,6 +70,15 @@ public abstract class Module {
     public void afterTick(Minecraft client) {
     }
 
+    /** Сбрасывает временное состояние шагов/флагов (например, после ошибки тика). */
+    public void resetTransientState() {
+    }
+
+    /** Вызывается при ошибке в onTick: модуль остаётся включённым, но чинит своё состояние. */
+    public void onTickError(Throwable error) {
+        resetTransientState();
+    }
+
     protected void onEnable() {
     }
 
@@ -81,6 +90,9 @@ public abstract class Module {
             return;
         }
         enabled = value;
+        // Диагностика: кто и когда менял состояние модуля. Случайных выключений в коде нет,
+        // поэтому журнал сразу показывает, если модуль переключил игрок или профиль.
+        client.DraxonClient.LOGGER.info("Module {} -> {}", name, value ? "on" : "off");
         if (value) {
             onEnable();
         } else {
