@@ -31,6 +31,14 @@ public final class TextField extends Component {
         this.placeholder = placeholder;
     }
 
+    /** Заполняет поле начальным значением без вызова onChange. */
+    public void setText(String value) {
+        String safe = value == null ? "" : value;
+        text.setLength(0);
+        text.append(safe.length() > maxLength ? safe.substring(0, maxLength) : safe);
+        cursor = text.length();
+    }
+
     public void clear() {
         cursor = 0;
         if (text.length() == 0) {

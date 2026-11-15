@@ -1,5 +1,6 @@
 package client.notification;
 
+import client.config.ConfigManager;
 import client.gui.theme.Theme;
 import client.lang.LanguageManager;
 import client.render.ColorUtils;
@@ -12,36 +13,39 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Собственная система уведомлений Draxon: стек плашек в правом верхнем углу,
- * появление с выездом, автоматическое исчезновение и мягкое затухание.
- * Ширина плашки подстраивается под текст, стандартные тосты Minecraft не используются.
+ * Собственная система уведомлений Draxon: компактный вертикальный стек строго по
+ * центру экрана под прицелом, плавное появление и затухание. Ширина плашки
+ * подстраивается под текст, стандартные тосты Minecraft не используются.
+ *
+ * <p>Новые уведомления встают сверху стека — ближе к прицелу — и расталкивают
+ * предыдущие вниз, поэтому плашки никогда не перекрывают друг друга.</p>
  */
 public final class NotificationManager {
     private static final List<Notification> ITEMS = new ArrayList<>();
-    private static final int HEIGHT = 24;
-    private static final int GAP = 6;
-    private static final int MARGIN = 8;
-    private static final int MIN_WIDTH = 120;
-    private static final int MAX_WIDTH = 260;
+    private static final int HEIGHT = 20;
+    private static final int GAP = 4;
+    private static final int MIN_WIDTH = 104;
+    private static final int MAX_WIDTH = 236;
+    private static final int MAX_VISIBLE = 6;
 
     private NotificationManager() {
     }
 
     public static void push(String text, Notification.Type type) {
         ITEMS.add(0, new Notification(text, type));
-        while (ITEMS.size() > 6) {
+        while (ITEMS.size() > MAX_VISIBLE) {
             ITEMS.remove(ITEMS.size() - 1);
         }
     }
 
     public static void moduleToggled(client.module.Module module, boolean enabled) {
-        String state = LanguageManager.tr(enabled ? "notification.on" : "notification.off",
-                enabled ? "ON" : "OFF");
-        push(LanguageManager.moduleName(module) + " \u2014 " + state,
+        String key = enabled ? "notification.module_enabled" : "notification.module_disabled";
+        String fallback = enabled ? "Module enabled" : "Module disabled";
+        push(LanguageManager.tr(key, fallback) + ": " + LanguageManager.moduleName(module),
                 enabled ? Notification.Type.ENABLED : Notification.Type.DISABLED);
     }
 
-    /** Рисует стек уведомлений в правом верхнем углу. */
+    /** Рисует стек уведомлений по центру экрана под прицелом. */
     public static void render(GuiGraphics graphics) {
         if (ITEMS.isEmpty()) {
             return;
@@ -54,26 +58,30 @@ public final class NotificationManager {
         }
 
         Theme theme = Theme.current();
-        float y = MARGIN;
+        int centerX = screenWidth / 2;
+        int offset = Math.max(0, Math.min(120, ConfigManager.settings().notificationOffset));
+        float y = screenHeight / 2.0f + offset;
+
         for (Notification notification : ITEMS) {
             float appear = notification.appear();
             float fade = notification.fade();
             float alpha = Math.max(0f, Math.min(1f, appear * fade));
 
-            String label = TextRenderer.clip(notification.text(), MAX_WIDTH - 34,
+            String label = TextRenderer.clip(notification.text(), MAX_WIDTH - 30,
                     TextRenderer.Weight.MEDIUM);
             int boxWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH,
-                    TextRenderer.width(label, TextRenderer.Weight.MEDIUM) + 34));
+                    TextRenderer.width(label, TextRenderer.Weight.MEDIUM) + 30));
 
-            int offset = Math.round((1f - appear) * 26f);
-            int x = screenWidth - MARGIN - boxWidth + offset;
-            int top = Math.round(y);
+            // Появление: плашка чуть поднимается и проявляется, без рывков.
+            int slide = Math.round((1f - appear) * 5f);
+            int x = centerX - boxWidth / 2;
+            int top = Math.round(y + slide);
 
-            RenderUtils.drawShadow(graphics, x, top, boxWidth, HEIGHT, 8, 4, theme.shadow, alpha * 0.9f);
-            RenderUtils.fillRounded(graphics, x, top, boxWidth, HEIGHT, 8,
+            RenderUtils.drawShadow(graphics, x, top, boxWidth, HEIGHT, 6, 3, theme.shadow, alpha * 0.85f);
+            RenderUtils.fillRounded(graphics, x, top, boxWidth, HEIGHT, 6,
                     ColorUtils.mulAlpha(theme.notification, alpha * 0.94f));
-            RenderUtils.fillRounded(graphics, x, top, boxWidth, HEIGHT, 8,
-                    ColorUtils.mulAlpha(theme.panelBorder, alpha * 0.25f));
+            RenderUtils.fillRounded(graphics, x, top, boxWidth, HEIGHT, 6,
+                    ColorUtils.mulAlpha(theme.panelBorder, alpha * 0.35f));
 
             int indicator = switch (notification.type()) {
                 case ENABLED -> theme.accent;
@@ -81,14 +89,14 @@ public final class NotificationManager {
                 case ERROR -> 0xFFD95C5C;
                 case INFO -> theme.accentSoft;
             };
-            RenderUtils.fillCircle(graphics, x + 14, top + HEIGHT / 2.0, 3.0,
+            RenderUtils.fillCircle(graphics, x + 10, top + HEIGHT / 2.0, 2.4,
                     ColorUtils.mulAlpha(indicator, alpha));
 
             int textY = top + (HEIGHT - TextRenderer.lineHeight()) / 2;
-            TextRenderer.draw(graphics, label, x + 24, textY,
+            TextRenderer.draw(graphics, label, x + 18, textY,
                     ColorUtils.mulAlpha(theme.text, alpha), TextRenderer.Weight.MEDIUM);
 
-            y += (HEIGHT + GAP) * Math.max(0.08f, appear);
+            y += (HEIGHT + GAP) * Math.max(0.06f, appear);
         }
 
         ITEMS.removeIf(Notification::expired);

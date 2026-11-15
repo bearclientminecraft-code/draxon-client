@@ -30,12 +30,17 @@ public final class ModuleRegistry {
         register(new LanguageModule(misc));
         register(new OptimizationModule(misc));
 
-        Category miscHud = category("misc");
-        register(new WatermarkModule(miscHud));
-        register(new NotificationModule(miscHud));
+        // Уведомления по умолчанию включены: стек под прицелом — часть HUD клиента.
+        Module notification = new NotificationModule(misc);
+        notification.setEnabledSilently(true);
+        register(notification);
 
+        // Watermark живёт в Render как HUD-модуль (раньше висел в Misc и рисовался дважды).
         Category render = category("render");
         register(new ArmorHudModule(render));
+        Module watermark = new WatermarkModule(render);
+        watermark.setEnabledSilently(true);
+        register(watermark);
 
         Category combat = category("combat");
         client.module.combat.CombatModules.register(combat);
@@ -75,6 +80,7 @@ public final class ModuleRegistry {
         for (Module module : MODULES) {
             if (module.isEnabled()) {
                 module.onTick(client);
+                module.afterTick(client);
             }
         }
     }

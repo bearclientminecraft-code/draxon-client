@@ -8,7 +8,7 @@ import client.gui.components.ModuleRow;
 import client.gui.theme.Theme;
 import client.module.Module;
 import client.module.ModuleRegistry;
-import client.notification.NotificationManager;
+import client.hud.NotificationHUD;
 import client.render.ColorUtils;
 import client.render.RenderUtils;
 import client.render.TextRenderer;
@@ -95,7 +95,7 @@ public final class ClickGuiScreen extends Screen {
         searchBar.render(graphics, mouseX, mouseY, clamp01(progress * 1.6f - 0.45f));
 
         renderThemePreview(graphics, mouseX, mouseY);
-        NotificationManager.render(graphics);
+        NotificationHUD.render(graphics);
     }
 
     @Override
@@ -114,10 +114,35 @@ public final class ClickGuiScreen extends Screen {
             }
         }
         if (searchBar.mouseClicked(mouseX, mouseY, button)) {
+            // Фокус поиска и полей настроек не должны жить одновременно.
+            for (CategoryPanel panel : panels) {
+                panel.blurInputs();
+            }
             return true;
         }
         searchBar.unfocus();
+        for (CategoryPanel panel : panels) {
+            panel.blurInputs();
+        }
         return false;
+    }
+
+    @Override
+    public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
+        for (CategoryPanel panel : panels) {
+            if (panel.mouseDragged(event.x(), event.y(), event.button(), dragX, dragY)) {
+                return true;
+            }
+        }
+        return super.mouseDragged(event, dragX, dragY);
+    }
+
+    @Override
+    public boolean mouseReleased(MouseButtonEvent event) {
+        for (CategoryPanel panel : panels) {
+            panel.mouseReleased(event.x(), event.y(), event.button());
+        }
+        return super.mouseReleased(event);
     }
 
     @Override
@@ -137,6 +162,12 @@ public final class ClickGuiScreen extends Screen {
             onClose();
             return true;
         }
+        // Ввод в раскрытых настройках (например, текст Watermark) получает клавиши первым.
+        for (CategoryPanel panel : panels) {
+            if (panel.keyPressed(event.key(), event.scancode(), event.modifiers())) {
+                return true;
+            }
+        }
         // Стрелки прокручивают содержимое панелей; сами панели остаются на месте.
         if (!searchBar.isFocused() && (event.key() == GLFW.GLFW_KEY_UP || event.key() == GLFW.GLFW_KEY_DOWN)) {
             float step = event.key() == GLFW.GLFW_KEY_UP ? CategoryPanel.ROW_HEIGHT : -CategoryPanel.ROW_HEIGHT;
@@ -150,6 +181,11 @@ public final class ClickGuiScreen extends Screen {
 
     @Override
     public boolean charTyped(CharacterEvent event) {
+        for (CategoryPanel panel : panels) {
+            if (panel.charTyped(event.codepoint())) {
+                return true;
+            }
+        }
         return searchBar.charTyped(event.codepoint());
     }
 

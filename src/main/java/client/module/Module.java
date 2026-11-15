@@ -66,6 +66,10 @@ public abstract class Module {
     public void onTick(Minecraft client) {
     }
 
+    /** Вызывается сразу после onTick: сюда модуль убирает временные эффекты тика. */
+    public void afterTick(Minecraft client) {
+    }
+
     protected void onEnable() {
     }
 

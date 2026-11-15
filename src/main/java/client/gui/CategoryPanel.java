@@ -21,11 +21,13 @@ import java.util.Locale;
  */
 public final class CategoryPanel extends Component {
     public static final int HEADER_HEIGHT = 34;
-    public static final int ROW_HEIGHT = 26;
+    public static final int ROW_HEIGHT = 24;
     private static final int RADIUS = 12;
     private static final int ICON_SIZE = 12;
-    private static final int PADDING_X = 6;
-    private static final int PADDING_BOTTOM = 6;
+    private static final int PADDING_X = 7;
+    private static final int PADDING_BOTTOM = 4;
+    /** Отступ сверху, чтобы скруглённые углы первой карточки не резались scissor-ом. */
+    private static final int CONTENT_TOP = 2;
 
     private final Category category;
     private final List<Component> components = new ArrayList<>();
@@ -74,9 +76,9 @@ public final class CategoryPanel extends Component {
         layoutComponents();
     }
 
-    /** Суммарная высота строк с учётом текущего поиска. */
+    /** Суммарная высота строк с учётом текущего поиска и верхнего отступа. */
     public int contentHeight() {
-        int total = 0;
+        int total = CONTENT_TOP;
         for (Component component : components) {
             if (matches(component)) {
                 total += component.rowHeight();
@@ -134,7 +136,7 @@ public final class CategoryPanel extends Component {
             return;
         }
 
-        graphics.enableScissor(x + 1, y + HEADER_HEIGHT, x + width - 1, y + height - PADDING_BOTTOM);
+        graphics.enableScissor(x + 1, y + HEADER_HEIGHT, x + width - 1, y + height - 2);
         for (Component component : components) {
             if (matches(component)) {
                 component.render(graphics, mouseX, mouseY, alpha);
@@ -165,6 +167,50 @@ public final class CategoryPanel extends Component {
             }
         }
         return true;
+    }
+
+    /** Снимает фокус со всех полей ввода панели. */
+    public void blurInputs() {
+        for (Component component : components) {
+            component.blur();
+        }
+    }
+
+    @Override
+    public boolean keyPressed(int key, int scancode, int modifiers) {
+        for (Component component : components) {
+            if (matches(component) && component.keyPressed(key, scancode, modifiers)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean charTyped(int codePoint) {
+        for (Component component : components) {
+            if (matches(component) && component.charTyped(codePoint)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
+        for (Component component : components) {
+            if (matches(component) && component.mouseDragged(mouseX, mouseY, button, deltaX, deltaY)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public void mouseReleased(double mouseX, double mouseY, int button) {
+        for (Component component : components) {
+            component.mouseReleased(mouseX, mouseY, button);
+        }
     }
 
     @Override
@@ -199,7 +245,7 @@ public final class CategoryPanel extends Component {
         layoutDirty = false;
         lastLayoutScroll = applied;
 
-        int top = y + HEADER_HEIGHT - applied;
+        int top = y + HEADER_HEIGHT + CONTENT_TOP - applied;
         for (Component component : components) {
             if (!matches(component)) {
                 continue;

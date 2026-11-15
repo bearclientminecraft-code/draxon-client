@@ -2,8 +2,19 @@ package client.render;
 
 import net.minecraft.client.gui.GuiGraphics;
 
-/** Примитивы отрисовки без текстур: скруглённые прямоугольники, круги, линии, тени. */
+/**
+ * Примитивы отрисовки без текстур: скруглённые прямоугольники, круги, линии, тени.
+ *
+ * <p>Скругления рисуются с аналитическим антиалиасингом: каждая пиксельная строка
+ * угла покрывается по вертикали несколькими подвыборками, а края строки — дробной
+ * прозрачностью по горизонтали. Поэтому нет ступенек и «квадратных пикселей» даже
+ * при больших радиусах и любом масштабе GUI.</p>
+ */
 public final class RenderUtils {
+    /** Подвыборок на пиксельную строку по вертикали: больше — мягче край. */
+    private static final int SUBSAMPLES = 4;
+    private static final int SHADOW_LAYERS = 3;
+
     private static boolean antiAlias = true;
 
     private RenderUtils() {
@@ -18,37 +29,37 @@ public final class RenderUtils {
             return;
         }
         int r = Math.max(0, Math.min(radius, Math.min(width, height) / 2));
-        if (r == 0) {
-            graphics.fill(x, y, x + width, y + height, color);
-            return;
-        }
         int right = x + width;
         int bottom = y + height;
+        if (r == 0) {
+            graphics.fill(x, y, right, bottom, color);
+            return;
+        }
+
+        // Центральная часть без углов: обычный прямоугольник.
         graphics.fill(x, y + r, right, bottom - r, color);
-        for (int i = 0; i < r; i++) {
-            double dy = r - i - 0.5;
-            double inset = r - Math.sqrt((double) r * r - dy * dy);
-            span(graphics, x + inset, right - inset, y + i, color);
-            span(graphics, x + inset, right - inset, bottom - i - 1, color);
+
+        double topCenter = y + r;
+        double bottomCenter = bottom - r;
+        int rows = Math.min(r, height / 2);
+        for (int i = 0; i < rows; i++) {
+            double[] top = rowCoverage(r, topCenter, y + i, y + i + 1.0);
+            if (top[1] > 0.002) {
+                span(graphics, x + top[0], right - top[0], y + i,
+                        ColorUtils.mulAlpha(color, (float) top[1]));
+            }
+            int bottomRow = bottom - i - 1;
+            double[] bottomRowCoverage = rowCoverage(r, bottomCenter, bottomRow, bottomRow + 1.0);
+            if (bottomRowCoverage[1] > 0.002) {
+                span(graphics, x + bottomRowCoverage[0], right - bottomRowCoverage[0], bottomRow,
+                        ColorUtils.mulAlpha(color, (float) bottomRowCoverage[1]));
+            }
         }
     }
 
+    /** Мягкий вариант скругления: тот же рендер, но с тем же антиалиасингом. */
     public static void fillRoundedSoft(GuiGraphics graphics, int x, int y, int width, int height, int radius, int color) {
-        if (width <= 0 || height <= 0 || (color >>> 24) == 0) {
-            return;
-        }
-        int r = Math.max(0, Math.min(radius, Math.min(width, height) / 2));
-        if (r == 0) {
-            graphics.fill(x, y, x + width, y + height, color);
-            return;
-        }
-        graphics.fill(x, y + r, x + width, y + height - r, color);
-        for (int i = 0; i < r; i++) {
-            double dy = r - i - 0.5;
-            int inset = (int) Math.ceil(r - Math.sqrt((double) r * r - dy * dy));
-            graphics.fill(x + inset, y + i, x + width - inset, y + i + 1, color);
-            graphics.fill(x + inset, y + height - i - 1, x + width - inset, y + height - i, color);
-        }
+        fillRounded(graphics, x, y, width, height, radius, color);
     }
 
     public static void fillCircle(GuiGraphics graphics, double cx, double cy, double radius, int color) {
@@ -58,13 +69,12 @@ public final class RenderUtils {
         int top = (int) Math.floor(cy - radius);
         int bottom = (int) Math.ceil(cy + radius);
         for (int row = top; row < bottom; row++) {
-            double dy = row + 0.5 - cy;
-            double square = radius * radius - dy * dy;
-            if (square <= 0) {
+            double[] coverage = rowCoverage(radius, cy, row, row + 1.0);
+            if (coverage[1] <= 0.002) {
                 continue;
             }
-            double half = Math.sqrt(square);
-            span(graphics, cx - half, cx + half, row, color);
+            double half = radius - coverage[0];
+            span(graphics, cx - half, cx + half, row, ColorUtils.mulAlpha(color, (float) coverage[1]));
         }
     }
 
@@ -127,49 +137,78 @@ public final class RenderUtils {
         fillCircle(graphics, x1, y1, cap, color);
     }
 
+    /** Мягкая тень под плашкой: несколько слоёв с антиалиасингом, без ступенек. */
     public static void drawShadow(GuiGraphics graphics, int x, int y, int width, int height,
                                   int radius, int spread, int color, float alpha) {
         if (spread <= 0 || alpha <= 0f) {
             return;
         }
-        int layers = 3;
-        for (int layer = layers; layer >= 1; layer--) {
-            double t = (double) layer / layers;
+        for (int layer = SHADOW_LAYERS; layer >= 1; layer--) {
+            double t = (double) layer / SHADOW_LAYERS;
             int grow = (int) Math.round(spread * t);
             float strength = (float) (0.35 + 0.65 * (1.0 - t));
             int layerColor = ColorUtils.mulAlpha(color, alpha * strength * 0.5f);
             if ((layerColor >>> 24) == 0) {
                 continue;
             }
-            fillRoundedSoft(graphics, x - grow, y - grow + 1, width + grow * 2, height + grow * 2,
+            fillRounded(graphics, x - grow, y - grow + 1, width + grow * 2, height + grow * 2,
                     radius + grow, layerColor);
         }
     }
 
+    /**
+     * Покрытие пиксельной строки кругом радиуса radius с центром centerY.
+     *
+     * @return пара {горизонтальный отступ от края круга, доля покрытия строки (0..1)}
+     */
+    private static double[] rowCoverage(double radius, double centerY, double bandTop, double bandBottom) {
+        double step = (bandBottom - bandTop) / SUBSAMPLES;
+        double covered = 0;
+        double insetSum = 0;
+        for (int i = 0; i < SUBSAMPLES; i++) {
+            double sample = bandTop + (i + 0.5) * step;
+            double dy = centerY - sample;
+            double squared = radius * radius - dy * dy;
+            if (squared <= 0) {
+                continue;
+            }
+            covered++;
+            insetSum += radius - Math.sqrt(squared);
+        }
+        if (covered <= 0) {
+            return new double[]{radius, 0};
+        }
+        return new double[]{insetSum / covered, covered / SUBSAMPLES};
+    }
+
+    /** Горизонтальный отрезок с антиалиасингом по дробным краям. */
     private static void span(GuiGraphics graphics, double left, double right, int row, int color) {
         double width = right - left;
-        if (width <= 0.004) {
+        if (width <= 0.004 || (color >>> 24) == 0) {
             return;
         }
         int first = (int) Math.floor(left);
         int last = (int) Math.ceil(right);
         if (last - first <= 1) {
+            float coverage = (float) Math.min(1.0, width);
             if (antiAlias) {
-                graphics.fill(first, row, first + 1, row + 1, ColorUtils.mulAlpha(color, (float) Math.min(1.0, width)));
-            } else {
-                graphics.fill(first, row, last, row + 1, color);
+                graphics.fill(first, row, first + 1, row + 1, ColorUtils.mulAlpha(color, coverage));
+            } else if (coverage >= 0.5f) {
+                graphics.fill(first, row, first + 1, row + 1, color);
             }
             return;
         }
         int solidStart = first + 1;
         int solidEnd = last - 1;
-        float leftCoverage = (float) Math.min(1.0, solidStart - left);
-        float rightCoverage = (float) Math.min(1.0, right - solidEnd);
-        if (leftCoverage > 0.01f) {
-            graphics.fill(first, row, solidStart, row + 1, ColorUtils.mulAlpha(color, leftCoverage));
-        }
-        if (rightCoverage > 0.01f) {
-            graphics.fill(solidEnd, row, last, row + 1, ColorUtils.mulAlpha(color, rightCoverage));
+        if (antiAlias) {
+            float leftCoverage = (float) Math.min(1.0, solidStart - left);
+            float rightCoverage = (float) Math.min(1.0, right - solidEnd);
+            if (leftCoverage > 0.01f) {
+                graphics.fill(first, row, solidStart, row + 1, ColorUtils.mulAlpha(color, leftCoverage));
+            }
+            if (rightCoverage > 0.01f) {
+                graphics.fill(solidEnd, row, last, row + 1, ColorUtils.mulAlpha(color, rightCoverage));
+            }
         }
         if (solidEnd > solidStart) {
             graphics.fill(solidStart, row, solidEnd, row + 1, color);

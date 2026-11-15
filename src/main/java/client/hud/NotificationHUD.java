@@ -1,21 +1,21 @@
 package client.hud;
 
-import client.config.ConfigManager;
+import client.module.Module;
+import client.module.ModuleRegistry;
 import client.notification.NotificationManager;
 import net.minecraft.client.gui.GuiGraphics;
 
-/** Лёгкий HUD-слой для собственных уведомлений, гаджет виден в режиме HUD. */
+/** HUD-слой уведомлений: рисует стек, пока включён модуль Notification. */
 public final class NotificationHUD {
-    private static boolean visible;
-
-    public static void setVisible(boolean value) {
-        visible = value;
+    private NotificationHUD() {
     }
 
     public static void render(GuiGraphics graphics) {
-        if (!visible) {
-            return;
+        boolean enabled = ModuleRegistry.byName("Notification")
+                .map(Module::isEnabled)
+                .orElse(true);
+        if (enabled) {
+            NotificationManager.render(graphics);
         }
-        NotificationManager.render(graphics);
     }
 }

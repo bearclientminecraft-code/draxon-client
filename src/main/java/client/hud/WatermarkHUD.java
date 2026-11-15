@@ -1,25 +1,18 @@
 package client.hud;
 
-import client.config.ConfigManager;
-import client.hud.Watermark;
+import client.module.Module;
+import client.module.ModuleRegistry;
 import net.minecraft.client.gui.GuiGraphics;
 
-/** Управление водяным знаком: включается/выключается через Misc -> Watermark. */
+/** Единственная точка отрисовки водяного знака: виден, пока включён модуль Watermark. */
 public final class WatermarkHUD {
-    private static boolean visible;
-
-    public static void setVisible(boolean value) {
-        visible = value;
-    }
-
-    public static boolean isVisible() {
-        return visible;
+    private WatermarkHUD() {
     }
 
     public static void render(GuiGraphics graphics) {
-        if (!visible) {
-            return;
-        }
-        Watermark.render(graphics);
+        boolean enabled = ModuleRegistry.byName("Watermark")
+                .map(Module::isEnabled)
+                .orElse(false);
+        Watermark.render(graphics, enabled);
     }
 }
