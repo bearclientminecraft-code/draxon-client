@@ -9,14 +9,15 @@ import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
 import java.util.List;
 
 /**
- * Auto Hit Crystal — простой макрос: держит слот кристалла и по нажатию правой
- * кнопки мыши сам нажимает левую.
+ * Auto Hit Crystal — простой макрос: держит слот кристалла, а при нажатии правой
+ * кнопки мыши сразу нажимает левую (по кристаллу/сущности под прицелом).
  *
- * <p>Удар уходит по кристаллу в крестике (или ближайшему кристаллу рядом), иначе
- * по сущности под прицелом. Задержка между автокликами — общий Delay ± Random
- * Range, чтобы не долбить каждый тик.</p>
+ * <p>Никакого наведения нет: действие происходит туда, куда смотрит игрок.
+ * Один ПКМ — один ЛКМ, если не включён повтор при удержании.</p>
  */
 public final class AutoHitCrystalModule extends CombatModule {
+    private boolean useWasDown;
+
     public AutoHitCrystalModule(Category category) {
         super("Auto Hit Crystal", "Crystal slot and auto left click", category);
     }
@@ -25,31 +26,38 @@ public final class AutoHitCrystalModule extends CombatModule {
     public List<Component> createSettingRows() {
         List<Component> rows = baseRows();
         addSlotRow(rows, "combat.option.crystal_slot");
-        rows.add(toggleRow("requireRightClick", true, "combat.option.require_right_click"));
+        rows.add(toggleRow("holdRepeat", false, "combat.option.repeat_while_held"));
         return rows;
     }
 
     @Override
     public void onTick(Minecraft client) {
-        if (!CombatApi.ready() || !macroHeld() || !gateOpen()) {
+        if (!CombatApi.ready() || !macroHeld()) {
             return;
         }
-        boolean rightClick = client.options.keyUse.isDown();
-        if (options.getBoolean("requireRightClick", true) && !rightClick) {
-            return;
-        }
+        // Слот кристалла держим всегда, чтобы ПКМ ставил именно кристалл.
         int slot = boundSlot();
-        if (slot > 0 && CombatApi.mainHandSlot() != slot && !CombatApi.swapToSlot(slot)) {
+        if (slot > 0 && CombatApi.mainHandSlot() != slot) {
+            CombatApi.swapToSlot(slot);
+        }
+
+        boolean useDown = client.options.keyUse.isDown();
+        boolean justPressed = useDown && !useWasDown;
+        useWasDown = useDown;
+        boolean holdRepeat = options.getBoolean("holdRepeat", false);
+        if (!justPressed && !(holdRepeat && useDown)) {
+            return;
+        }
+        if (!gateOpen()) {
             return;
         }
         Entity target = crystalTarget(client);
-        if (target != null) {
-            CombatApi.attack(target);
+        if (target != null && CombatApi.leftClick(target)) {
             markAction();
         }
     }
 
-    /** Кристалл в крестике, ближайший кристалл рядом или сущность под прицелом. */
+    /** Кристалл в крестике, иначе сущность под прицелом, иначе ближайший кристалл. */
     private Entity crystalTarget(Minecraft client) {
         if (client.crosshairPickEntity instanceof EndCrystal crystal && crystal.isAlive()) {
             return crystal;
@@ -59,9 +67,9 @@ public final class AutoHitCrystalModule extends CombatModule {
             return living;
         }
         EndCrystal nearest = null;
-        double best = 5.0;
+        double best = 4.5;
         for (EndCrystal crystal : client.level.getEntitiesOfClass(EndCrystal.class,
-                client.player.getBoundingBox().inflate(5.0), EndCrystal::isAlive)) {
+                client.player.getBoundingBox().inflate(4.5), EndCrystal::isAlive)) {
             double distance = CombatApi.distanceTo(crystal);
             if (distance < best) {
                 best = distance;

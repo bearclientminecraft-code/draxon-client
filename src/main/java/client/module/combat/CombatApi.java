@@ -296,6 +296,44 @@ public final class CombatApi {
         return ready() && mc().gameMode.useItem(player(), InteractionHand.MAIN_HAND).consumesAction();
     }
 
+    /**
+     * Настоящая правая кнопка мыши «куда смотрю»: по блоку — useItemOn с попаданием
+     * прицела, по сущности — interactAt/interact, иначе ПКМ по воздуху.
+     *
+     * <p>Именно этого не хватало макросам: {@link #useItem()} — это только ПКМ
+     * по воздуху, поэтому якорь не ставился и светокамень не заряжал блок.</p>
+     */
+    public static boolean rightClick() {
+        if (!ready()) {
+            return false;
+        }
+        if (mc().hitResult instanceof BlockHitResult blockHit) {
+            return mc().gameMode.useItemOn(player(), InteractionHand.MAIN_HAND, blockHit).consumesAction();
+        }
+        if (mc().hitResult instanceof net.minecraft.world.phys.EntityHitResult entityHit) {
+            return mc().gameMode.interactAt(player(), entityHit.getEntity(), entityHit,
+                    InteractionHand.MAIN_HAND).consumesAction()
+                    || mc().gameMode.interact(player(), entityHit.getEntity(),
+                    InteractionHand.MAIN_HAND).consumesAction();
+        }
+        return mc().gameMode.useItem(player(), InteractionHand.MAIN_HAND).consumesAction();
+    }
+
+    /** Левая кнопка мыши по цели под прицелом (или по ближайшему кристаллу). */
+    public static boolean leftClick(Entity target) {
+        if (!ready()) {
+            return false;
+        }
+        Entity real = target;
+        if (real == null) {
+            real = mc().crosshairPickEntity;
+        }
+        if (real != null && real.isAlive()) {
+            return attack(real);
+        }
+        return false;
+    }
+
     public static boolean interact(Entity entity) {
         return ready() && mc().gameMode.interact(player(), entity, InteractionHand.MAIN_HAND).consumesAction();
     }

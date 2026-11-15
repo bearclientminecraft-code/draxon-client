@@ -77,8 +77,8 @@ public final class AnchorMacroModule extends CombatModule {
         if (!CombatApi.swapToSlot(slot)) {
             return;
         }
-        // Правая кнопка мыши: используем предмет в руке.
-        CombatApi.useItem();
+        // Правая кнопка мыши по тому, куда смотрит игрок (блок — постановка/зарядка).
+        CombatApi.rightClick();
         markAction();
         advance();
     }
