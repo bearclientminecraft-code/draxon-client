@@ -90,8 +90,7 @@ public abstract class Module {
             return;
         }
         enabled = value;
-        // Диагностика: кто и когда менял состояние модуля. Случайных выключений в коде нет,
-        // поэтому журнал сразу показывает, если модуль переключил игрок или профиль.
+        // Диагностика: кто и когда менял состояние модуля.
         client.DraxonClient.LOGGER.info("Module {} -> {}", name, value ? "on" : "off");
         if (value) {
             onEnable();

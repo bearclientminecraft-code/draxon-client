@@ -107,21 +107,6 @@ public abstract class CombatModule extends Module {
         return MacroKeys.consumePress(key, MacroKeys.PRESS_WINDOW_MS);
     }
 
-    private long lastErrorNotice;
-
-    /** Ошибка в тике: состояние сбрасывается, модуль остаётся включённым, причина видна. */
-    @Override
-    public void onTickError(Throwable error) {
-        super.onTickError(error);
-        if (System.currentTimeMillis() - lastErrorNotice < 5000) {
-            return;
-        }
-        lastErrorNotice = System.currentTimeMillis();
-        NotificationManager.push(LanguageManager.moduleName(this) + ": "
-                + t("macro.error", "ошибка") + " (" + error.getClass().getSimpleName() + ")",
-                client.notification.Notification.Type.ERROR);
-    }
-
     /** Отклик на нажатие Macro Key: подтверждает, что макрос получил клавишу. */
     public void onMacroPressed() {
         if (options.getBoolean("macroFeedback", true)) {
@@ -154,9 +139,6 @@ public abstract class CombatModule extends Module {
         List<Component> rows = new ArrayList<>();
         rows.add(new KeybindRow(t("combat.option.macro_key", "Macro key"), this::macroKey,
                 value -> options.setInt("macroKey", value)));
-        rows.add(new ToggleRow(t("combat.option.macro_feedback", "Macro feedback"),
-                () -> options.getBoolean("macroFeedback", true),
-                value -> options.setBoolean("macroFeedback", value)));
         rows.add(new SliderRow(t("combat.option.delay", "Delay"), 0, 200, 5, " ms",
                 this::delayMs, value -> options.setInt("delay", value)));
         rows.add(new ToggleRow(t("combat.option.random_delay", "Random delay"), this::randomDelay,
@@ -193,11 +175,6 @@ public abstract class CombatModule extends Module {
         return new SliderRow(t(langKey, key), min, max, step, suffix,
                 () -> options.clamped(key, fallback, min, max),
                 value -> options.setInt(key, value));
-    }
-
-    /** Мгновенный (не дожидающийся задержки) сброс после ручного вмешательства. */
-    protected void cancelPending() {
-        resetGate();
     }
 
     // ------------------------------------------------------------ наведение

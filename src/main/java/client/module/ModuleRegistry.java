@@ -88,8 +88,8 @@ public final class ModuleRegistry {
                 module.onTick(client);
                 module.afterTick(client);
             } catch (Throwable error) {
-                // Ошибка одного модуля не должна ломать тик клиента и другие модули.
-                DraxonClient.LOGGER.error("Ошибка в модуле {}: {}", module.getName(), error.toString(), error);
+                // Ошибка первого модуля не должен ломать тик, остальные продолжуют.
+                DraxonClient.LOGGER.error("Ошибка в модуле {}: {}", module.getName(), error);
                 module.onTickError(error);
             }
         }
