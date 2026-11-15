@@ -76,6 +76,7 @@
   "combat.option.range": "Range",
   "combat.option.re_equip_elytra": "Re-equip elytra",
   "combat.option.refill": "Refill",
+  "combat.option.repeat_while_held": "Repeat while held",
   "combat.option.require_breach": "Require breach",
   "combat.option.require_density": "Require density",
   "combat.option.require_mouse": "Require mouse down",

@@ -76,6 +76,7 @@
   "combat.option.range": "Дистанция",
   "combat.option.re_equip_elytra": "Надевать элитры",
   "combat.option.refill": "Пополнение",
+  "combat.option.repeat_while_held": "Повтор при удержании",
   "combat.option.require_breach": "Только Breach",
   "combat.option.require_density": "Только Density",
   "combat.option.require_mouse": "Только с зажатой атакой",

@@ -76,6 +76,7 @@
   "combat.option.range": "Reichweite",
   "combat.option.re_equip_elytra": "Elytren anlegen",
   "combat.option.refill": "Nachfüllen",
+  "combat.option.repeat_while_held": "Wiederholen bei Halten",
   "combat.option.require_breach": "Nur Breach",
   "combat.option.require_density": "Nur Density",
   "combat.option.require_mouse": "Maus halten",

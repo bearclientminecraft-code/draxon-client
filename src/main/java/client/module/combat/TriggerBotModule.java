@@ -40,7 +40,7 @@ public final class TriggerBotModule extends CombatModule {
         rows.add(toggleRow("selectFirstHit", false, "combat.option.select_first_hit"));
         rows.add(intSlider("missChance", 0, 0, 100, 5, "%", "combat.option.target_miss_chance"));
         rows.add(intSlider("earlyChance", 0, 0, 100, 5, "%", "combat.option.early_hit_chance"));
-        rows.add(toggleRow("limitToItems", false, "combat.option.limit_to_items"));
+        // Weapon Slot — единственный слот, на котором TriggerBot вообще бьёт.
         addSlotRow(rows, "combat.option.weapon_slot");
         return rows;
     }
@@ -50,7 +50,9 @@ public final class TriggerBotModule extends CombatModule {
         if (!CombatApi.ready() || !macroHeld()) {
             return;
         }
-        if (options.getBoolean("limitToItems", false) && !holdingBoundSlot()) {
+        // Работает только на назначенном Weapon Slot: на остальных слотах атаки нет.
+        int weaponSlot = boundSlot();
+        if (weaponSlot > 0 && CombatApi.mainHandSlot() != weaponSlot) {
             return;
         }
         if (options.getBoolean("requireMouseDown", false) && !client.options.keyAttack.isDown()) {

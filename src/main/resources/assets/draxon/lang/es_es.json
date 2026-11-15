@@ -76,6 +76,7 @@
   "combat.option.range": "Alcance",
   "combat.option.re_equip_elytra": "Volver a equipar élitros",
   "combat.option.refill": "Recarga",
+  "combat.option.repeat_while_held": "Repetir al mantener",
   "combat.option.require_breach": "Requiere Breach",
   "combat.option.require_density": "Requiere Density",
   "combat.option.require_mouse": "Requiere clic mantenido",

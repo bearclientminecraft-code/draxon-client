@@ -139,8 +139,6 @@ public abstract class CombatModule extends Module {
         List<Component> rows = new ArrayList<>();
         rows.add(new KeybindRow(t("combat.option.macro_key", "Macro key"), this::macroKey,
                 value -> options.setInt("macroKey", value)));
-        rows.add(new ToggleRow(t("combat.option.silent_aim", "Silent aim"), this::silentAim,
-                value -> options.setBoolean("silentAim", value)));
         rows.add(new ToggleRow(t("combat.option.macro_feedback", "Macro feedback"),
                 () -> options.getBoolean("macroFeedback", true),
                 value -> options.setBoolean("macroFeedback", value)));
@@ -187,25 +185,14 @@ public abstract class CombatModule extends Module {
         resetGate();
     }
 
-    // ------------------------------------------------------------ silent aim
+    // ------------------------------------------------------------ наведение
 
-    /** Silent Aim включён по умолчанию: удар/постановка наводятся только на сервере. */
-    public boolean silentAim() {
-        return options.getBoolean("silentAim", true);
-    }
-
-    private boolean silentPending;
-
-    /** Наводится на точку: silently (без поворота камеры) или плавно вручную. */
+    /** Плавно доворачивает камеру к точке с заданной скоростью. */
     protected void aim(net.minecraft.world.phys.Vec3 point, String speedKey, int fallbackSpeed) {
         if (point == null) {
             return;
         }
-        if (silentAim()) {
-            silentPending = SilentAim.begin(point);
-        } else {
-            CombatApi.aimAt(point, options.clamped(speedKey, fallbackSpeed, 5, 90));
-        }
+        CombatApi.aimAt(point, options.clamped(speedKey, fallbackSpeed, 5, 90));
     }
 
     protected void aim(net.minecraft.world.phys.Vec3 point) {
@@ -218,12 +205,4 @@ public abstract class CombatModule extends Module {
         }
     }
 
-    /** Возвращает исходную ротацию после действий тика. */
-    @Override
-    public void afterTick(net.minecraft.client.Minecraft client) {
-        if (silentPending) {
-            SilentAim.end();
-            silentPending = false;
-        }
-    }
 }
