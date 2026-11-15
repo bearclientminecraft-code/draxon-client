@@ -2,6 +2,7 @@ package client.module;
 
 import client.category.Category;
 import client.category.CategoryRegistry;
+import client.module.combat.MacroKeys;
 import net.minecraft.client.Minecraft;
 
 import java.util.ArrayList;
@@ -75,8 +76,9 @@ public final class ModuleRegistry {
                 .findFirst();
     }
 
-    /** Тик клиента: включённые модули получают управление. */
+    /** Тик клиента: сначала опрос Macro Key, затем включённые модули. */
     public static void tick(Minecraft client) {
+        MacroKeys.tick();
         for (Module module : MODULES) {
             if (module.isEnabled()) {
                 module.onTick(client);

@@ -9,25 +9,30 @@ import java.util.Map;
  * Настройки боевого модуля. Значения хранятся строками в общем словаре конфигурации
  * ({@code Settings.combat}), поэтому назначенные слоты, Macro Key, задержки и
  * режимы переживают перезапуск без отдельных полей на каждый модуль.
+ *
+ * <p>Карта берётся из {@link ConfigManager#settings()} при каждом чтении: загрузка
+ * конфигурации заменяет объект настроек целиком, и закэшированная ссылка на карту
+ * теряла бы все сохранённые значения.</p>
  */
 public final class CombatOptions {
     private final String id;
-    private final Map<String, String> values;
 
-    private CombatOptions(String id, Map<String, String> values) {
+    private CombatOptions(String id) {
         this.id = id;
-        this.values = values;
     }
 
-    /** Возвращает (и при необходимости создаёт) набор настроек модуля. */
+    /** Возвращает набор настроек модуля. */
     public static CombatOptions of(String id) {
+        return new CombatOptions(id);
+    }
+
+    private Map<String, String> values() {
         Map<String, Map<String, String>> all = ConfigManager.settings().combat;
         if (all == null) {
             all = new HashMap<>();
             ConfigManager.settings().combat = all;
         }
-        Map<String, String> values = all.computeIfAbsent(id, key -> new HashMap<>());
-        return new CombatOptions(id, values);
+        return all.computeIfAbsent(id, key -> new HashMap<>());
     }
 
     public String id() {
@@ -35,13 +40,13 @@ public final class CombatOptions {
     }
 
     public String get(String key, String fallback) {
-        String value = values.get(key);
+        String value = values().get(key);
         return value == null ? fallback : value;
     }
 
     public void set(String key, String value) {
-        values.put(key, value);
-        save();
+        values().put(key, value);
+        ConfigManager.save();
     }
 
     public int getInt(String key, int fallback) {
@@ -67,9 +72,5 @@ public final class CombatOptions {
     /** Ограничивает int-настройку диапазоном (для слайдеров и шагов). */
     public int clamped(String key, int fallback, int min, int max) {
         return Math.max(min, Math.min(max, getInt(key, fallback)));
-    }
-
-    private void save() {
-        ConfigManager.save();
     }
 }

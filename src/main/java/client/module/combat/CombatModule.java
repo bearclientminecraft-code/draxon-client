@@ -9,7 +9,7 @@ import client.gui.components.SlotBindRow;
 import client.gui.components.ToggleRow;
 import client.lang.LanguageManager;
 import client.module.Module;
-import com.mojang.blaze3d.platform.InputConstants;
+import client.notification.NotificationManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,7 +24,6 @@ import java.util.List;
 public abstract class CombatModule extends Module {
     protected final CombatOptions options;
     private long nextActionAt;
-    private boolean macroWasDown;
 
     protected CombatModule(String name, String description, Category category) {
         super(name, description, category);
@@ -78,21 +77,50 @@ public abstract class CombatModule extends Module {
         nextActionAt = 0;
     }
 
-    /** Нажата ли Macro Key (без клавиши модуль считается всегда активным). */
+    /**
+     * Активен ли макрос: без назначенной клавиши модуль работает автоматически,
+     * с клавишей — пока она нажата или в течение короткого окна после нажатия,
+     * чтобы цепочка не обрывалась на быстром тапе.
+     */
     protected boolean macroHeld() {
         int key = macroKey();
         if (key <= 0) {
             return true;
         }
-        return InputConstants.isKeyDown(CombatApi.mc().getWindow(), key);
+        if (MacroKeys.isDown(key)) {
+            return true;
+        }
+        long last = MacroKeys.lastPress(key);
+        return last > 0 && System.currentTimeMillis() - last <= MacroKeys.ENGAGE_WINDOW_MS;
     }
 
-    /** Фронт нажатия Macro Key: срабатывает один раз на нажатие. */
+    /**
+     * Фронт нажатия Macro Key. Нажатие забирается только один раз, поэтому
+     * цепочка не запускается повторно, а модуль получает его, даже если в момент
+     * нажатия не было цели или нужного состояния.
+     */
     protected boolean macroJustPressed() {
-        boolean down = macroHeld();
-        boolean pressed = down && !macroWasDown;
-        macroWasDown = down;
-        return pressed;
+        int key = macroKey();
+        if (key <= 0) {
+            return true;
+        }
+        return MacroKeys.consumePress(key, MacroKeys.PRESS_WINDOW_MS);
+    }
+
+    /** Отклик на нажатие Macro Key: подтверждает, что макрос получил клавишу. */
+    public void onMacroPressed() {
+        if (options.getBoolean("macroFeedback", true)) {
+            NotificationManager.push(LanguageManager.moduleName(this) + " · "
+                    + t("macro.triggered", "macro"), client.notification.Notification.Type.INFO);
+        }
+    }
+
+    /** Принудительно завершает макрос: снимает окно активности и состояние цепочки. */
+    protected void endMacro() {
+        int key = macroKey();
+        if (key > 0) {
+            MacroKeys.consumePress(key, Long.MAX_VALUE);
+        }
     }
 
     protected boolean holdingBoundSlot() {
@@ -113,6 +141,9 @@ public abstract class CombatModule extends Module {
                 value -> options.setInt("macroKey", value)));
         rows.add(new ToggleRow(t("combat.option.silent_aim", "Silent aim"), this::silentAim,
                 value -> options.setBoolean("silentAim", value)));
+        rows.add(new ToggleRow(t("combat.option.macro_feedback", "Macro feedback"),
+                () -> options.getBoolean("macroFeedback", true),
+                value -> options.setBoolean("macroFeedback", value)));
         rows.add(new SliderRow(t("combat.option.delay", "Delay"), 0, 200, 5, " ms",
                 this::delayMs, value -> options.setInt("delay", value)));
         rows.add(new ToggleRow(t("combat.option.random_delay", "Random delay"), this::randomDelay,
